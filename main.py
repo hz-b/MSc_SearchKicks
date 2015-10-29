@@ -3,7 +3,7 @@
 
 import sys
 from PyQt4.QtGui import QApplication
-from mods import ui, core
+from search_kicks import ui, core
 
 __author__ = "Olivier CHURLAUD"
 __version__ = "0.1.0"

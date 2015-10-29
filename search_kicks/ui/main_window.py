@@ -7,7 +7,7 @@ from PyQt4.QtCore import pyqtSlot, pyqtSignal
 from PyQt4.QtGui import QMainWindow, qApp
 from PyQt4 import uic
 
-from mods.core.enumerations import OrbitSourceItems, DataSourceItems, AxisItems
+from search_kicks.core.enumerations import OrbitSourceItems, DataSourceItems, AxisItems
 
 
 class MainWindow(QMainWindow):
@@ -27,7 +27,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
-        uic.loadUi('mods/ui/main_window.ui', self)
+        uic.loadUi('search_kicks/ui/main_window.ui', self)
         self.setWindowTitle(
                 qApp.applicationName() + " v" + qApp.applicationVersion())
         self.reference_orbit = 0

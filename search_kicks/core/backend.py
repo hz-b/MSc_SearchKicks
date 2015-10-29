@@ -5,7 +5,7 @@ import numpy as np
 from numpy import pi
 from PyQt4.QtCore import pyqtSlot, pyqtSignal, QObject
 
-from mods.core.enumerations import OrbitSourceItems, DataSourceItems, AxisItems
+from search_kicks.core.enumerations import OrbitSourceItems, DataSourceItems, AxisItems
 
 
 class SearchKickBackend(QObject):
@@ -48,11 +48,11 @@ class SearchKickBackend(QObject):
             st = funk[i:b]  # Piece of signal to compare
             xt = phase_expand[i:b]  # Equivalent piece from the phase
 
-            a, b, c = fit_sinus('OffsetOFF', st, xt, v1)
+            a, b, c = fit_sinus('OffsetOFF', st, xt, 1)
 
             # We don't use the a coefficient (it's cero), we reduce a degree
             # of freedom
-            y = a + b*sin(c + xt)
+            y = 0 + b*sin(c + xt)
 
             RMS_pos[i] = sum(pow(y - st, 2))
 
@@ -67,7 +67,7 @@ class SearchKickBackend(QObject):
             # interval to look for the minimun (we allow it to be in between
             # two BPMs in each case)
             interval = np.linspace(start, end, 1000)
-            C, I = min(abs(
+            I = argmin(abs(
                     (b*sin(interval + c)) - (b*sin(interval+c-2*pi*tune))
                 ))
             phase_kick[i] = interval[I]
@@ -102,7 +102,7 @@ class SearchKickBackend(QObject):
         comp = 0
 
         if abs(coeff[2]*sin(phase_kick[index] + coeff[3]) -
-                coeff[2]*sin(phase_kick[index]+coeff[3]-2*pi*tune)
+                coeff[2]*sin(pmodshase_kick[index]+coeff[3]-2*pi*tune)
                ) > 1e7:
 
             if index == 1:
