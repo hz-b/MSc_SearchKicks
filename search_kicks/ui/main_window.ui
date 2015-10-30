@@ -16,6 +16,24 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
+     <widget class="QLabel" name="current_mode_label">
+      <property name="font">
+       <font>
+        <pointsize>11</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+        <strikeout>false</strikeout>
+       </font>
+      </property>
+      <property name="text">
+       <string>Current mode</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QGraphicsView" name="graphicsView"/>
     </item>
     <item>
@@ -90,16 +108,16 @@
     <property name="title">
      <string>Orbit Source</string>
     </property>
-    <addaction name="actionCurrent_Orbit"/>
-    <addaction name="actionLoad_File"/>
-    <addaction name="actionLoad_archiver"/>
+    <addaction name="action_source_current_orbit"/>
+    <addaction name="action_source_file"/>
+    <addaction name="action_source_archiver"/>
    </widget>
    <widget class="QMenu" name="menuTime_analysis">
     <property name="title">
      <string>Time analysis</string>
     </property>
-    <addaction name="actionData_from_FOFB"/>
-    <addaction name="actionLoad_file_2"/>
+    <addaction name="action_time_analys_fofb"/>
+    <addaction name="action_time_analys_file"/>
    </widget>
    <widget class="QMenu" name="menuReference_orbit">
     <property name="title">
@@ -127,27 +145,27 @@
     <string>Load</string>
    </property>
   </action>
-  <action name="actionLoad_File">
+  <action name="action_source_file">
    <property name="text">
     <string>Load File</string>
    </property>
   </action>
-  <action name="actionLoad_archiver">
+  <action name="action_source_archiver">
    <property name="text">
     <string>Load from Archiver</string>
    </property>
   </action>
-  <action name="actionData_from_FOFB">
+  <action name="action_time_analys_fofb">
    <property name="text">
     <string>Data from FOFB</string>
    </property>
   </action>
-  <action name="actionLoad_file_2">
+  <action name="action_time_analys_file">
    <property name="text">
     <string>Load file</string>
    </property>
   </action>
-  <action name="actionCurrent_Orbit">
+  <action name="action_source_current_orbit">
    <property name="text">
     <string>Current Orbit</string>
    </property>

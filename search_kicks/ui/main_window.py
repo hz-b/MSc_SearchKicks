@@ -1,10 +1,8 @@
-#!/usr/bin/env python.
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import time
-
 from PyQt4.QtCore import pyqtSlot, pyqtSignal
-from PyQt4.QtGui import QMainWindow, qApp
+from PyQt4.QtGui import QMainWindow, QFileDialog, qApp
 from PyQt4 import uic
 
 from search_kicks.core.enumerations import OrbitSourceItems, DataSourceItems, AxisItems
@@ -34,9 +32,7 @@ class MainWindow(QMainWindow):
             )
         self.reference_orbit = 0
 
-
     # Slots
-
     @pyqtSlot()
     def on_reset_ref_btn_clicked(self):
         self.reference_orbit_text = "The reference orbit is 0"
@@ -47,3 +43,33 @@ class MainWindow(QMainWindow):
         orbit, phase, tune = self.getOrbitData()
         best_idx, phase_kick = core.get_kick(orbit, phase, tune)
         self.settings_clicked.emit()
+
+    @pyqtSlot(bool)
+    def on_action_source_current_orbit_triggered(self, checked=False):
+        print('source_current_orbit')
+        self.current_mode_label.setText("Search kick from current orbit")
+
+    @pyqtSlot(bool)
+    def on_action_source_file_triggered(self, checked=False):
+        print('source_file')
+        file_name = QFileDialog.getOpenFileName(self, "Open File",
+                                                "/home",
+                                                "Picture (*.png *.xpm *.jpg)")
+        print(file_name)
+        self.current_mode_label.setText("Search kick from file")
+
+    @pyqtSlot(bool)
+    def on_action_source_archiver_triggered(self, checked=False):
+        print('source_archiver')
+        self.current_mode_label.setText("Search kick from Archiver")
+
+    @pyqtSlot(bool)
+    def on_action_time_analys_fofb_triggered(self, checked=False):
+        print('time_analys_fofb')
+        self.current_mode_label.setText("Time analysis from FOFB")
+
+
+    @pyqtSlot(bool)
+    def on_action_time_analys_file_triggered(self, checked=False):
+        print('time_analys_file')
+        self.current_mode_label.setText("Time analysis from file")
