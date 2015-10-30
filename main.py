@@ -3,7 +3,10 @@
 
 import sys
 from PyQt4.QtGui import QApplication
+import matplotlib
+matplotlib.use("Qt4Agg")
 from search_kicks import ui
+
 
 __author__ = "Olivier CHURLAUD"
 __version__ = "0.1.0"

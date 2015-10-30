@@ -34,57 +34,48 @@
      </widget>
     </item>
     <item>
-     <widget class="QGraphicsView" name="graphicsView"/>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <item>
-         <widget class="QComboBox" name="bpm_combo"/>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QFormLayout" name="formLayout_4">
-        <property name="fieldGrowthPolicy">
-         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-        </property>
-        <item row="0" column="0" colspan="2">
-         <widget class="QPushButton" name="execute_btn">
-          <property name="text">
-           <string>Execute</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_4"/>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </item>
-    <item>
      <widget class="QGraphicsView" name="graphicsView_2"/>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <widget class="QGraphicsView" name="graphicsView"/>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout" stretch="2,3">
       <item>
        <widget class="QGraphicsView" name="graphicsView_3"/>
       </item>
       <item>
        <widget class="QGroupBox" name="global_info_box">
         <property name="title">
-         <string>GroupBox</string>
+         <string>Messages</string>
         </property>
-        <layout class="QFormLayout" name="formLayout_5">
-         <property name="fieldGrowthPolicy">
-          <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-         </property>
-         <item row="0" column="0">
-          <widget class="QLabel" name="global_info_label">
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="0" column="1">
+          <widget class="QPushButton" name="execute_btn">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="text">
-            <string>Frequency</string>
+            <string>Execute</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QListWidget" name="message_area">
+           <property name="editTriggers">
+            <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
+           <property name="showDropIndicator" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="alternatingRowColors">
+            <bool>true</bool>
+           </property>
+           <property name="selectionBehavior">
+            <enum>QAbstractItemView::SelectRows</enum>
            </property>
           </widget>
          </item>
@@ -101,32 +92,41 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>20</height>
+     <height>29</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSource">
     <property name="title">
-     <string>Orbit Source</string>
+     <string>Orbit</string>
     </property>
-    <addaction name="action_source_current_orbit"/>
-    <addaction name="action_source_file"/>
-    <addaction name="action_source_archiver"/>
+    <widget class="QMenu" name="menuLoad_Current_Orbit">
+     <property name="title">
+      <string>Load Current Orbit</string>
+     </property>
+     <addaction name="action_orbit_load_current_bpmx"/>
+     <addaction name="action_orbit_load_current_bpmy"/>
+    </widget>
+    <addaction name="menuLoad_Current_Orbit"/>
+    <addaction name="action_orbit_load_file"/>
+    <addaction name="action_orbit_load_archiver"/>
+    <addaction name="action_orbit_save"/>
    </widget>
-   <widget class="QMenu" name="menuTime_analysis">
+   <widget class="QMenu" name="menu_time_analysis">
     <property name="title">
      <string>Time analysis</string>
     </property>
-    <addaction name="action_time_analys_fofb"/>
-    <addaction name="action_time_analys_file"/>
+    <addaction name="action_timeanalys_load_fofb"/>
+    <addaction name="action_timeanalys_load_file"/>
+    <addaction name="action_timeanalys_save"/>
    </widget>
    <widget class="QMenu" name="menuReference_orbit">
     <property name="title">
      <string>Reference orbit</string>
     </property>
-    <addaction name="actionView"/>
+    <addaction name="action_reference_view"/>
    </widget>
    <addaction name="menuSource"/>
-   <addaction name="menuTime_analysis"/>
+   <addaction name="menu_time_analysis"/>
    <addaction name="menuReference_orbit"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -145,34 +145,49 @@
     <string>Load</string>
    </property>
   </action>
-  <action name="action_source_file">
+  <action name="action_orbit_load_file">
    <property name="text">
     <string>Load File</string>
    </property>
   </action>
-  <action name="action_source_archiver">
+  <action name="action_orbit_load_archiver">
    <property name="text">
     <string>Load from Archiver</string>
    </property>
   </action>
-  <action name="action_time_analys_fofb">
+  <action name="action_timeanalys_load_fofb">
    <property name="text">
     <string>Data from FOFB</string>
    </property>
   </action>
-  <action name="action_time_analys_file">
+  <action name="action_timeanalys_load_file">
    <property name="text">
     <string>Load file</string>
    </property>
   </action>
-  <action name="action_source_current_orbit">
-   <property name="text">
-    <string>Current Orbit</string>
-   </property>
-  </action>
-  <action name="actionView">
+  <action name="action_reference_view">
    <property name="text">
     <string>View</string>
+   </property>
+  </action>
+  <action name="action_orbit_save">
+   <property name="text">
+    <string>Save Orbit</string>
+   </property>
+  </action>
+  <action name="action_timeanalys_save">
+   <property name="text">
+    <string>Save</string>
+   </property>
+  </action>
+  <action name="action_orbit_load_current_bpmx">
+   <property name="text">
+    <string>BPMx</string>
+   </property>
+  </action>
+  <action name="action_orbit_load_current_bpmy">
+   <property name="text">
+    <string>BPMy</string>
    </property>
   </action>
  </widget>
