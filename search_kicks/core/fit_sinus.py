@@ -4,8 +4,6 @@
 from math import atan2
 import numpy as np
 from numpy import cos, sin
-import matplotlib
-matplotlib.use("Qt4Agg")
 import matplotlib.pyplot as plt
 
 
@@ -14,7 +12,7 @@ def fit_sinus(signal, phase, offset_opt=True, plot=False):
 
         The funtion to fit with is
         y = a + b1*cos(d*t) + b2*sin(d*t)
-          = a +
+          = a + b*sin(d*t + c)
 
         Parameters
         ----------
@@ -85,13 +83,3 @@ def fit_sinus(signal, phase, offset_opt=True, plot=False):
         plt.grid(True)
 
     return offset, amplitude, phase_shift
-
-
-if __name__ == "__main__":
-    phase = 2*np.pi*np.arange(1, 21).T/10
-    signal_clean = 2*sin(phase+1.4) + 1
-    noise = np.random.random(phase.size)*2 - 1
-    signal = signal_clean + noise
-
-    offset, amplitude, phase_shift = fit_sinus(signal, phase, True, True)
-    print("offset = {}\namplitude = {}\nphase_shift = {}".format(offset, amplitude, phase_shift))

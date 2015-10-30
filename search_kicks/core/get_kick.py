@@ -5,7 +5,7 @@ import numpy as np
 from numpy import sin, pi
 import matplotlib.pyplot as plt
 
-from fit_sinus import fit_sinus
+from . import fit_sinus, build_sinus
 
 
 def get_kick(orbit, phase, tune, plot=False):
@@ -26,7 +26,11 @@ def get_kick(orbit, phase, tune, plot=False):
 
          Returns
          -------
-            kick_phase :
+            kick_phase : float
+                The phase where the kick was found.
+            sin_coefficients : [a, b]
+                a and b so that the sinus is a*sin(b+phase)
+
     """
     bpm_nb = orbit.size
     best_rms = 0
@@ -66,39 +70,15 @@ def get_kick(orbit, phase, tune, plot=False):
 
     if plot:
         plt.figure()
-        plt.plot(phase/2/pi, orbit, '-')
+        plt.plot(phase/(2*pi), orbit, '-')
         plt.xlabel(r'phase / $2 \pi$')
-        plt.axvline(kick_phase/2/pi, -2, 2)
+        plt.axvline(kick_phase/(2*pi), -2, 2)
 
-        phase_th = np.linspace(0, tune*2*pi, 1000)
-        kick_id = np.argmin(abs(phase_th - kick_phase))
+        sinus_signal, phase_th = build_sinus(kick_phase,
+                                             tune,
+                                             sin_coefficients
+                                             )
 
-        b = sin_coefficients[0]
-        c = sin_coefficients[1]
-        sinus_signal = np.concatenate(
-            (
-                b*sin(phase_th[:kick_id] + c + 2*pi*tune),
-                b*sin(phase_th[kick_id:] + c)
-            ))
-        plt.plot(phase_th/2/pi, sinus_signal)
+        plt.plot(phase_th/(2*pi), sinus_signal)
 
-    return kick_phase
-
-
-if __name__ == "__main__":
-    bpm_nb = 30
-    i = 13  # BPM before kick
-    away_ratio = 0.2
-
-    tune = 6.5
-    phase = np.linspace(0, 2*pi*tune, bpm_nb)
-
-    noise = 2*np.random.random(30)-1
-
-    kick = phase[i]+(phase[i+1]-phase[i])*away_ratio
-    orbit = np.concatenate((
-        np.sin(phase[:i]),
-        np.sin(2*(kick)-phase[i:])
-        )) + noise
-    print("kick set at {}".format(kick))
-    print(get_kick(orbit, phase, tune, True))
+    return kick_phase, sin_coefficients
