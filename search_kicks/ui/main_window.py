@@ -7,7 +7,7 @@ from PyQt4 import uic
 
 from search_kicks.core.enumerations import OrbitSourceItems, DataSourceItems, AxisItems
 from search_kicks import core
-
+from . import dialogs
 
 class MainWindow(QMainWindow):
     """MainWindow implements the window to communicate with the user.
@@ -52,9 +52,11 @@ class MainWindow(QMainWindow):
     @pyqtSlot(bool)
     def on_action_source_file_triggered(self, checked=False):
         print('source_file')
-        file_name = QFileDialog.getOpenFileName(self, "Open File",
-                                                "/home",
-                                                "Picture (*.png *.xpm *.jpg)")
+        dialog = dialogs.MetaFileDialog(self)
+        dialog.show()
+   #     file_name = QFileDialog.getOpenFileName(self, "Open File",
+   #                                             "/home",
+   #                                             "Picture (*.png *.xpm *.jpg)")
         print(file_name)
         self.current_mode_label.setText("Search kick from file")
 
@@ -67,7 +69,6 @@ class MainWindow(QMainWindow):
     def on_action_time_analys_fofb_triggered(self, checked=False):
         print('time_analys_fofb')
         self.current_mode_label.setText("Time analysis from FOFB")
-
 
     @pyqtSlot(bool)
     def on_action_time_analys_file_triggered(self, checked=False):
