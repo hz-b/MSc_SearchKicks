@@ -4,25 +4,36 @@
 import numpy as np
 from numpy import sin, pi
 
+from . import fit_sinus
 
-def orbit_from_time_signal(family, BPM_data, freq, sample_freq, nb_points):
+
+def orbit_from_time_signal(BPM_data, freq, sample_freq, nb_points):
     """ Do this
 
         parameters
-        ==========
-         * freq is the frequency to fit
-         * The BPM data should be an array of ~(108xSamples)
+        ----------
+        family :
+        BPM_data : np.array
+            The BPM data should be an array of
+            number_of_BPM x number_of_samples
+        freq : float
+            The frequency to fit.
+        sample_freq : float
+            The sampling frequency.
+        nb_points : int
+            The number of points in the signal
 
-        return
-        ======
-         * new_data
-         * big_orbit
-         * mRMS
+        Returns
+        ------
+        new_data
+        big_orbit
+        mRMS
+
     """
 
     if freq <= 0:
         new_data = 0
-        big_orbit = BPM_data[:][abs(freq)]
+        big_orbit = BPM_data[:, abs(freq)]
         mRMS = 0
 
         return new_data, big_orbit, mRMS
@@ -66,3 +77,21 @@ def orbit_from_time_signal(family, BPM_data, freq, sample_freq, nb_points):
     big_orbit = new_data[:][I]
 
     return new_data, big_orbit, mRMS
+
+
+
+if __name__ == "__main__":
+    bpm_nb = 30
+    i = 13  # BPM before kick
+    away_ratio = 0.2
+
+    tune = 6.5
+    phase = np.linspace(0, 2*pi*tune, bpm_nb)
+
+    kick = phase[i]+(phase[i+1]-phase[i])*away_ratio
+    orbit = np.concatenate((
+        np.sin(phase[:i]),
+        np.sin(2*(kick)-phase[i:])
+        ))
+    print("kick set at {}".format(kick))
+    print(get_kick(orbit, phase, tune, True))

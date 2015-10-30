@@ -102,7 +102,7 @@ class SearchKickBackend(QObject):
         comp = 0
 
         if abs(coeff[2]*sin(phase_kick[index] + coeff[3]) -
-                coeff[2]*sin(pmodshase_kick[index]+coeff[3]-2*pi*tune)
+                coeff[2]*sin(phase_kick[index]+coeff[3]-2*pi*tune)
                ) > 1e7:
 
             if index == 1:

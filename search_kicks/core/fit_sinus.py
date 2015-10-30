@@ -9,41 +9,65 @@ matplotlib.use("Qt4Agg")
 import matplotlib.pyplot as plt
 
 
-def fit_sinus(signal, x_array, offset_opt=True, plot=False):
-    """
-        The function to fit with is
+def fit_sinus(signal, phase, offset_opt=True, plot=False):
+    """ Find a sinus that fits with the signal.
+
+        The funtion to fit with is
         y = a + b1*cos(d*t) + b2*sin(d*t)
-          = a + b*sin(c+d*t)
+          = a +
+
+        Parameters
+        ----------
+        signal : np.array
+            Signal to be approximated.
+        Phase : np.array
+            Argument of the sinus. in `a + b*sin(c+d*t)` it would be `d*t`
+        offset_opt : bool, optional.
+            If False, the fit function is `b*sin(c + phase)`, else it is
+            is `a + b*sin(c + phase)`. Default to True.
+        plot : bool, optional.
+            If True, plot the signal and the calculated sinus together.
+            Default to False.
+
+        Returns
+        -------
+        offset : float
+            The `a` in `a + b*sin(c + phase)`. If offset_opt is False, it is 0.
+        amplitude : float
+            The `b` in `a + b*sin(c + phase)`.
+        phase_shift : float
+            The `c` in `a + b*sin(c + phase)`.
+
     """
 
     # In order for the function to work we should have columns (because of the
     # matrix multiplication) in the Signal and the Xarray, let's check it
     if signal.ndim == 1:
         signal = signal[np.newaxis].T
-    if x_array.ndim == 1:
-        x_array = x_array[np.newaxis].T
+    if phase.ndim == 1:
+        phase = phase[np.newaxis].T
     if signal.shape[0] == 1:
         signal = signal.T
-    if x_array.shape[0] == 1:
-        x_array = x_array.T
+    if phase.shape[0] == 1:
+        phase = phase.T
 
     # check errors
-    if x_array.shape[0] != signal.shape[0]:
+    if phase.shape[0] != signal.shape[0]:
         ValueError('Arguments 1 and 2 must have the same length')
-    if x_array.shape[1] != 1 or signal.shape[1] != 1:
+    if phase.shape[1] != 1 or signal.shape[1] != 1:
         ValueError('Arguments 1 and 2 must be (n,1)-arrays')
     if not np.isscalar(offset_opt) or not np.isscalar(plot):
         TypeError('Arguments 3 and 4 must be booleans')
 
     if offset_opt:
         # set constant term
-        constant = np.ones(x_array.shape)
+        constant = np.ones(phase.shape)
     else:
-        constant = np.zeros(x_array.shape)
+        constant = np.zeros(phase.shape)
 
     # Solve the system equation
     eq_matrix = np.concatenate(
-        (constant, sin(x_array), cos(x_array)),
+        (constant, sin(phase), cos(phase)),
         1
         )
     abc, residual, _, _ = np.linalg.lstsq(eq_matrix, signal)
@@ -54,9 +78,9 @@ def fit_sinus(signal, x_array, offset_opt=True, plot=False):
 
     if plot:
         plt.figure()
-        y = offset + amplitude*sin(x_array + phase_shift)
-        plt.plot(x_array, signal, '-r')
-        plt.plot(x_array, y, '-b')
+        y = offset + amplitude*sin(phase + phase_shift)
+        plt.plot(phase, signal, '-r')
+        plt.plot(phase, y, '-b')
 
         plt.grid(True)
 
@@ -64,7 +88,10 @@ def fit_sinus(signal, x_array, offset_opt=True, plot=False):
 
 
 if __name__ == "__main__":
-    x_array = 2*np.pi*np.arange(1, 21).T/10
-    signal = sin(x_array)+np.random.random(x_array.size)
-    freq = 5
-    offset, strength, phase_shift = fit_sinus(signal, x_array, True, True)
+    phase = 2*np.pi*np.arange(1, 21).T/10
+    signal_clean = 2*sin(phase+1.4) + 1
+    noise = np.random.random(phase.size)*2 - 1
+    signal = signal_clean + noise
+
+    offset, amplitude, phase_shift = fit_sinus(signal, phase, True, True)
+    print("offset = {}\namplitude = {}\nphase_shift = {}".format(offset, amplitude, phase_shift))
