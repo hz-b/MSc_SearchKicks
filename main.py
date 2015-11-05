@@ -15,7 +15,7 @@ __email__ = "olivier.churlaud@helmholtz-berlin.de"
 __status__ = "Development"
 
 app = QApplication(sys.argv)
-app.setApplicationName("SearchKick")
+app.setApplicationName("SearchKicks")
 app.setApplicationVersion("0.1.0")
 
 main_window = ui.MainWindow()
