@@ -13,3 +13,4 @@ __status__ = "Developpement"
 __all__ = ['ui']
 
 from .main_window import MainWindow
+from .time_analysis_graphics import TimeAnalysisGraphics

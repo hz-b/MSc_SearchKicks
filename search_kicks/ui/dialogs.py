@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from PyQt4.QtCore import pyqtSlot, pyqtSignal
+from PyQt4.QtCore import pyqtSlot, pyqtSignal, QString
 from PyQt4 import QtGui
+
+import time
 
 
 class MetaFileDialog(QtGui.QDialog):
+    _filename = ""
+
     def __init__(self, parent=None):
         QtGui.QDialog.__init__(self, parent)
 
@@ -19,17 +23,27 @@ class MetaFileDialog(QtGui.QDialog):
         self.button_box = QtGui.QDialogButtonBox(
             QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel
             )
-
+        self.button_box.button(QtGui.QDialogButtonBox.Ok).setEnabled(False)
         self.main_layout = QtGui.QVBoxLayout(self)
         self.main_layout.addLayout(self.form_layout)
         self.main_layout.addWidget(self.button_box)
 
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
+        self.file_edit.textChanged.connect(self.__update_accept_btn)
+
+    def get_filename(self):
+        return self._filename
 
     @pyqtSlot()
     def on_file_edit_pressed(self):
         pass
+
+    def __update_accept_btn(self):
+        if self.file_edit.text().isEmpty():
+            self.button_box.button(QtGui.QDialogButtonBox.Ok).setEnabled(False)
+        else:
+            self.button_box.button(QtGui.QDialogButtonBox.Ok).setEnabled(True)
 
 
 class LoadFileDialog(MetaFileDialog):
@@ -44,11 +58,17 @@ class LoadFileDialog(MetaFileDialog):
 
     @pyqtSlot()
     def on_file_edit_pressed(self):
-        file_name = QtGui.QFileDialog.getOpenFileName(self, "Open File")
-        self.file_edit.setText(file_name)
+        self._filename = str(
+            QtGui.QFileDialog.getOpenFileName(self, "Open File", ".",
+                                              "Data files (*.mat *.hdf5 *.txt)"
+                                              )
+            )
+        self.file_edit.setText(self._filename)
 
 
 class SaveFileDialog(MetaFileDialog):
+    _file_extension = ""
+
     def __init__(self, parent=None):
         MetaFileDialog.__init__(self, parent)
 
@@ -61,10 +81,21 @@ class SaveFileDialog(MetaFileDialog):
         self.type_edit.addItem(".hdf5")
         self.form_layout.addRow("File type", self.type_edit)
 
+    def get_file_extension(self):
+        return self._file_extension
+
     @pyqtSlot()
     def on_file_edit_pressed(self):
-        file_name = QtGui.QFileDialog.getSaveFileName(self, "Save As")
-        self.file_edit.setText(file_name)
+        file_default = time.strftime("%Y-%m-%d_%H-%M-%S")+"_untitled.txt"
+
+        self._filename = QtGui.QFileDialog.getSaveFileName(
+            self, "Save As", file_default, "Data files (*.mat *.hdf5 *.txt)"
+            )
+        self.file_edit.setText(self._filename)
+
+    @pyqtSlot(QString)
+    def on_type_edit_activated(self, text):
+        self._file_extension = text[1:]  # remove the '.'
 
 
 class LineEditFocus(QtGui.QLineEdit):
