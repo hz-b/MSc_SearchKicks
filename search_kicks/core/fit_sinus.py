@@ -77,7 +77,7 @@ def fit_sinus(signal, phase, offset_opt=True, plot=False):
     if plot:
         plt.figure()
         y = offset + amplitude*sin(phase + phase_shift)
-        plt.plot(phase, signal, '-r')
+        plt.plot(phase, signal, '+r')
         plt.plot(phase, y, '-b')
 
         plt.grid(True)

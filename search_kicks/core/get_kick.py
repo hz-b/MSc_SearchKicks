@@ -70,7 +70,7 @@ def get_kick(orbit, phase, tune, plot=False):
 
     if plot:
         plt.figure()
-        plt.plot(phase/(2*pi), orbit, '-')
+        plt.plot(phase/(2*pi), orbit, '+')
         plt.xlabel(r'phase / $2 \pi$')
         plt.axvline(kick_phase/(2*pi), -2, 2)
 
