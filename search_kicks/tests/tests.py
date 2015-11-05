@@ -3,7 +3,11 @@
 
 import numpy as np
 import sys
-sys.path.append("..")
+import os
+
+__my_dir = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(__my_dir+"/..")
+
 import core
 
 
@@ -34,7 +38,7 @@ def test_get_kick():
     tune = 6.5
     phase = np.linspace(0, 2*np.pi*tune, bpm_nb)
 
-    noise = 2*np.random.random(30)-1
+    noise = 2*np.random.normal(0, 1, 30)-1
 
     kick = phase[i]+(phase[i+1]-phase[i])*away_ratio
     orbit = np.concatenate((
