@@ -23,46 +23,47 @@ class TimeAnalysisGraphics(pg.GraphicsLayoutWidget):
         CMx_nb = self.CMx.shape[0]
         CMy_nb = self.CMy.shape[0]
 
-        BPMx_plots = self.addPlot(1, 0)
-        BPMx_plots.disableAutoRange()
-        self.rgn1 = pg.LinearRegionItem([sample_nb/5., sample_nb/3.])
-        BPMx_plots.addItem(self.rgn1)
-
         CMx_plots = self.addPlot(0, 0)
         CMx_plots.disableAutoRange()
         self.rgn2 = pg.LinearRegionItem([sample_nb/5., sample_nb/3.])
         CMx_plots.addItem(self.rgn2)
-
-        BPMy_plots = self.addPlot(1, 1)
-        BPMy_plots.disableAutoRange()
-        self.rgn3 = pg.LinearRegionItem([sample_nb/5., sample_nb/3.])
-        BPMy_plots.addItem(self.rgn3)
 
         CMy_plots = self.addPlot(0, 1)
         CMy_plots.disableAutoRange()
         self.rgn4 = pg.LinearRegionItem([sample_nb/5., sample_nb/3.])
         CMy_plots.addItem(self.rgn4)
 
-        for i in range(BPMx_nb):
-            BPMx_plots.addItem(
-                pg.PlotDataItem(self.BPMx[i, :], pen=(i, BPMx_nb))
-                )
+        BPMx_plots = self.addPlot(1, 0)
+        BPMx_plots.disableAutoRange()
+        self.rgn1 = pg.LinearRegionItem([sample_nb/5., sample_nb/3.])
+        BPMx_plots.addItem(self.rgn1)
+
+        BPMy_plots = self.addPlot(1, 1)
+        BPMy_plots.disableAutoRange()
+        self.rgn3 = pg.LinearRegionItem([sample_nb/5., sample_nb/3.])
+        BPMy_plots.addItem(self.rgn3)
+
         for i in range(CMx_nb):
             CMx_plots.addItem(
                 pg.PlotDataItem(self.CMx[i, :], pen=(i, CMx_nb))
-                )
-        for i in range(BPMy_nb):
-            BPMy_plots.addItem(
-                pg.PlotDataItem(self.BPMy[i, :], pen=(i, BPMy_nb))
                 )
         for i in range(CMy_nb):
             CMy_plots.addItem(
                 pg.PlotDataItem(self.CMy[i, :], pen=(i, CMy_nb))
                 )
-        BPMx_plots.autoRange()  # only after plots are added
-        CMx_plots.autoRange()  # only after plots are added
-        BPMy_plots.autoRange()  # only after plots are added
-        CMy_plots.autoRange()  # only after plots are added
+        for i in range(BPMx_nb):
+            BPMx_plots.addItem(
+                pg.PlotDataItem(self.BPMx[i, :], pen=(i, BPMx_nb))
+                )
+        for i in range(BPMy_nb):
+            BPMy_plots.addItem(
+                pg.PlotDataItem(self.BPMy[i, :], pen=(i, BPMy_nb))
+                )
+        # autorange only after plots are added
+        BPMx_plots.autoRange()
+        BPMy_plots.autoRange()
+        CMx_plots.autoRange()
+        CMy_plots.autoRange()
 
         self.rgn1.sigRegionChanged.connect(self.__on_change_rgn)
         self.rgn2.sigRegionChanged.connect(self.__on_change_rgn)

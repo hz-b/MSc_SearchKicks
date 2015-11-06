@@ -33,7 +33,7 @@ class MetaFileDialog(QtGui.QDialog):
         self.file_edit.textChanged.connect(self.__update_accept_btn)
 
     def get_filename(self):
-        return self._filename
+        return str(self._filename)
 
     @pyqtSlot()
     def on_file_edit_pressed(self):
@@ -59,7 +59,7 @@ class LoadFileDialog(MetaFileDialog):
     @pyqtSlot()
     def on_file_edit_pressed(self):
         self._filename = str(
-            QtGui.QFileDialog.getOpenFileName(self, "Open File", ".",
+            QtGui.QFileDialog.getOpenFileName(self, "Open File", "",
                                               "Data files (*.mat *.hdf5 *.txt)"
                                               )
             )
@@ -77,16 +77,18 @@ class SaveFileDialog(MetaFileDialog):
         self.form_layout.labelForField(self.file_edit).setText("Save as")
         self.type_edit = QtGui.QComboBox()
         self.type_edit.addItem(".mat")
-        self.type_edit.addItem(".txt")
         self.type_edit.addItem(".hdf5")
-        self.form_layout.addRow("File type", self.type_edit)
+        self.form_layout.insertRow(0, "File type", self.type_edit)
+
+        self._file_extension = self.type_edit.currentText()[1:]
 
     def get_file_extension(self):
-        return self._file_extension
+        return str(self._file_extension)
 
     @pyqtSlot()
     def on_file_edit_pressed(self):
-        file_default = time.strftime("%Y-%m-%d_%H-%M-%S")+"_untitled.txt"
+        file_default = time.strftime("%Y-%m-%d_%H-%M-%S")+"_untitled"
+        file_default += self.type_edit.currentText()
 
         self._filename = QtGui.QFileDialog.getSaveFileName(
             self, "Save As", file_default, "Data files (*.mat *.hdf5 *.txt)"
@@ -96,6 +98,12 @@ class SaveFileDialog(MetaFileDialog):
     @pyqtSlot(QString)
     def on_type_edit_activated(self, text):
         self._file_extension = text[1:]  # remove the '.'
+
+
+class SaveOrbitDialog(SaveFileDialog):
+    def __init__(self, parent=None):
+        SaveFileDialog.__init__(self, parent)
+        self.type_edit.addItem(".txt")
 
 
 class LineEditFocus(QtGui.QLineEdit):
