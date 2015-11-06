@@ -18,7 +18,7 @@ def fit_sinus(signal, phase, offset_opt=True, plot=False):
         ----------
         signal : np.array
             Signal to be approximated.
-        Phase : np.array
+        phase : np.array
             Argument of the sinus. in `a + b*sin(c+d*t)` it would be `d*t`
         offset_opt : bool, optional.
             If False, the fit function is `b*sin(c + phase)`, else it is

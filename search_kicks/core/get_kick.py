@@ -9,8 +9,7 @@ from . import fit_sinus, build_sinus
 
 
 def get_kick(orbit, phase, tune, plot=False):
-    """
-        Find the kick in the orbit.
+    """ Find the kick in the orbit.
 
         Parameters
         ----------
