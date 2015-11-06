@@ -8,7 +8,7 @@ import os
 __my_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(__my_dir+"/..")
 
-import core
+import core as skcore
 
 
 def test_fit_sinus():
@@ -20,7 +20,7 @@ def test_fit_sinus():
     noise = np.random.random(phase.size)*2 - 1
     signal = signal_clean + noise
 
-    offset, amplitude, phase_shift = core.fit_sinus(signal, phase, True, True)
+    offset, amplitude, phase_shift = skcore.fit_sinus(signal, phase, True, True)
     print("offset = {}\namplitude = {}\nphase_shift = {}".format(offset,
                                                                  amplitude,
                                                                  phase_shift
@@ -46,7 +46,7 @@ def test_get_kick():
         np.sin(2*(kick)-phase[i:])
         )) + 0.5*noise
 
-    kick_found, _ = core.get_kick(orbit, phase, tune, True)
+    kick_found, _ = skcore.get_kick(orbit, phase, tune, True)
     print("kick set at {}".format(kick/(2*np.pi)))
     print("kick set found at {}".format(kick_found/(2*np.pi)))
 
