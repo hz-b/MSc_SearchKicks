@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from PyQt4.QtGui import QApplication
+from PyQt4 import QtGui
 import matplotlib
 matplotlib.use("Qt4Agg")
 from search_kicks import ui
@@ -14,9 +14,10 @@ __maintainer__ = ""
 __email__ = "olivier.churlaud@helmholtz-berlin.de"
 __status__ = "Development"
 
-app = QApplication(sys.argv)
+app = QtGui.QApplication(sys.argv)
 app.setApplicationName("SearchKicks")
 app.setApplicationVersion("0.1.0")
+app.setWindowIcon(QtGui.QIcon("search_kicks/ui/bessy.gif"))
 
 main_window = ui.MainWindow()
 
