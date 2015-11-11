@@ -6,30 +6,43 @@ from PyQt4 import QtGui
 
 import time
 
+from search_kicks.ui.time_analysis_graphics import FourPlotsPickGraphics
 
-class MetaFileDialog(QtGui.QDialog):
+
+class MyDialog(QtGui.QDialog):
     _filename = ""
 
     def __init__(self, parent=None):
         QtGui.QDialog.__init__(self, parent)
 
         self.setWindowTitle("Title")
+        self.main_layout = QtGui.QVBoxLayout(self)
+
+        self.button_box = QtGui.QDialogButtonBox(
+            QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel
+            )
+
+        self.main_layout.addWidget(self.button_box)
+
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+
+
+class MetaFileDialog(MyDialog):
+    _filename = ""
+
+    def __init__(self, parent=None):
+        MyDialog.__init__(self, parent)
+        self.button_box.button(QtGui.QDialogButtonBox.Ok).setEnabled(False)
+
         self.form_layout = QtGui.QFormLayout()
 
         self.file_edit = LineEditFocus(self)
         self.file_edit.pressed.connect(self.on_file_edit_pressed)
         self.form_layout.addRow("Label", self.file_edit)
 
-        self.button_box = QtGui.QDialogButtonBox(
-            QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel
-            )
-        self.button_box.button(QtGui.QDialogButtonBox.Ok).setEnabled(False)
-        self.main_layout = QtGui.QVBoxLayout(self)
-        self.main_layout.addLayout(self.form_layout)
-        self.main_layout.addWidget(self.button_box)
+        self.main_layout.insertLayout(0, self.form_layout)
 
-        self.button_box.accepted.connect(self.accept)
-        self.button_box.rejected.connect(self.reject)
         self.file_edit.textChanged.connect(self.__update_accept_btn)
 
     def get_filename(self):
@@ -53,8 +66,6 @@ class LoadFileDialog(MetaFileDialog):
         self.setWindowTitle("Load File")
 
         self.form_layout.labelForField(self.file_edit).setText("Load File")
-        self.reference_edit = QtGui.QCheckBox()
-        self.form_layout.addRow("Set as reference", self.reference_edit)
 
     @pyqtSlot()
     def on_file_edit_pressed(self):
@@ -100,6 +111,13 @@ class SaveFileDialog(MetaFileDialog):
         self._file_extension = text[1:]  # remove the '.'
 
 
+class LoadOrbitDialog(LoadFileDialog):
+    def __init__(self, parent=None):
+        LoadFileDialog.__init__(self, parent)
+        self.reference_edit = QtGui.QCheckBox()
+        self.form_layout.addRow("Set as reference", self.reference_edit)
+
+
 class SaveOrbitDialog(SaveFileDialog):
     def __init__(self, parent=None):
         SaveFileDialog.__init__(self, parent)
@@ -114,3 +132,25 @@ class LineEditFocus(QtGui.QLineEdit):
 
     def mousePressEvent(self, event):
         self.pressed.emit()
+
+
+class PickOrbitDialog(MyDialog):
+    def __init__(self, BPMx, BPMy, CMx, CMy, parent=None):
+        MyDialog.__init__(self, parent)
+
+        self.setWindowTitle("Pick an orbit")
+        self.form_layout = QtGui.QFormLayout(self)
+        self.sample_picker = FourPlotsPickGraphics(BPMx, BPMy, CMx, CMy)
+        self.form_layout.addRow(self.sample_picker)
+        self.family_edit = QtGui.QComboBox()
+        self.family_edit.addItem('BPMx')
+        self.family_edit.addItem('BPMy')
+        self.form_layout.addRow("Family to pick", self.family_edit)
+
+        self.main_layout.insertLayout(0, self.form_layout)
+
+    def get_sample(self):
+        return self.sample_picker.get_sample()
+
+    def get_family(self):
+        return self.family_edit.currentText()

@@ -91,7 +91,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>19</height>
+     <height>29</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSource">
@@ -100,19 +100,20 @@
     </property>
     <widget class="QMenu" name="menuLoad_Current_Orbit">
      <property name="title">
-      <string>Load Current Orbit</string>
+      <string>&amp;Load Current Orbit</string>
      </property>
      <addaction name="action_orbit_load_current_bpmx"/>
      <addaction name="action_orbit_load_current_bpmy"/>
     </widget>
     <addaction name="menuLoad_Current_Orbit"/>
+    <addaction name="action_orbit_from_time_data"/>
     <addaction name="action_orbit_load_file"/>
     <addaction name="action_orbit_load_archiver"/>
     <addaction name="action_orbit_save"/>
    </widget>
    <widget class="QMenu" name="menu_time_analysis">
     <property name="title">
-     <string>Time analysis</string>
+     <string>&amp;Time analysis</string>
     </property>
     <addaction name="action_timeanalys_load_fofb"/>
     <addaction name="action_timeanalys_load_file"/>
@@ -120,7 +121,7 @@
    </widget>
    <widget class="QMenu" name="menuReference_orbit">
     <property name="title">
-     <string>Reference orbit</string>
+     <string>&amp;Reference orbit</string>
     </property>
     <addaction name="action_reference_view"/>
    </widget>
@@ -146,47 +147,52 @@
   </action>
   <action name="action_orbit_load_file">
    <property name="text">
-    <string>Load File</string>
+    <string>Load &amp;File</string>
    </property>
   </action>
   <action name="action_orbit_load_archiver">
    <property name="text">
-    <string>Load from Archiver</string>
+    <string>L&amp;oad from Archiver</string>
    </property>
   </action>
   <action name="action_timeanalys_load_fofb">
    <property name="text">
-    <string>Data from FOFB</string>
+    <string>&amp;Data from FOFB</string>
    </property>
   </action>
   <action name="action_timeanalys_load_file">
    <property name="text">
-    <string>Load file</string>
+    <string>&amp;Load file</string>
    </property>
   </action>
   <action name="action_reference_view">
    <property name="text">
-    <string>View</string>
+    <string>&amp;View</string>
    </property>
   </action>
   <action name="action_orbit_save">
    <property name="text">
-    <string>Save Orbit</string>
+    <string>&amp;Save Orbit</string>
    </property>
   </action>
   <action name="action_timeanalys_save">
    <property name="text">
-    <string>Save</string>
+    <string>&amp;Save</string>
    </property>
   </action>
   <action name="action_orbit_load_current_bpmx">
    <property name="text">
-    <string>BPMx</string>
+    <string>&amp;BPMx</string>
    </property>
   </action>
   <action name="action_orbit_load_current_bpmy">
    <property name="text">
-    <string>BPMy</string>
+    <string>B&amp;PMy</string>
+   </property>
+  </action>
+  <action name="action_orbit_from_time_data">
+   <property name="text">
+    <string>Pick from time data</string>
    </property>
   </action>
  </widget>

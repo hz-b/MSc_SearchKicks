@@ -12,7 +12,8 @@ import time
 import search_kicks.core as skcore
 import search_kicks.tools as sktools
 from search_kicks.ui import dialogs
-from search_kicks.ui.time_analysis_graphics import TimeAnalysisGraphics
+from search_kicks.ui.time_analysis_graphics import (FourPlotsTAGraphics,
+                                                    OrbitGraphics)
 
 pg.setConfigOption('background', 'w')
 pg.setConfigOption('foreground', 'k')
@@ -58,6 +59,22 @@ class MainWindow(QMainWindow):
         self.__set_mode(Mode.orbit, Mode.online, "BPMy")
 
     @pyqtSlot(bool)
+    def on_action_orbit_from_time_data_triggered(self, checked=False):
+        dialog = dialogs.LoadFileDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            filename = dialog.get_filename()
+            BPMx, BPMy, CMx, CMy = sktools.IO.load_timeanalys(filename)
+            dialog = dialogs.PickOrbitDialog(BPMx, BPMy, CMx, CMy)
+            if dialog.exec_() == QDialog.Accepted:
+                chosen_sample = dialog.get_sample()
+                family = dialog.get_family()
+                BPM = (BPMx if family == 'BPMx' else BPMy).transpose()
+                self.__set_orbit_plot(BPM[chosen_sample, :])
+                self.__set_mode(Mode.orbit, Mode.from_time_data, family)
+                self.__add_message("Orbit loaded from file {}, "
+                                   "sample {}".format(filename, chosen_sample))
+
+    @pyqtSlot(bool)
     def on_action_orbit_load_file_triggered(self, checked=False):
         dialog = dialogs.LoadFileDialog(self)
         if dialog.exec_() == QDialog.Accepted:
@@ -94,12 +111,8 @@ class MainWindow(QMainWindow):
             self.BPMx, self.BPMy, self.CMx, self.CMy = \
                 sktools.IO.load_timeanalys(filename)
 
-            main_graphics_layout = TimeAnalysisGraphics(self.BPMx,
-                                                        self.BPMy,
-                                                        self.CMx,
-                                                        self.CMy)
-            self.mainsplitter.widget(0).setParent(None)
-            self.mainsplitter.insertWidget(0, main_graphics_layout)
+            self.__set_time_analysis_plot()
+
             self.__set_mode(Mode.time_analysis, Mode.from_file)
             self.__add_message("Data loaded from file {}".format(filename))
 
@@ -140,6 +153,20 @@ class MainWindow(QMainWindow):
 
         return self.orbit, self.phase, self.tune
 
+    def __set_time_analysis_plot(self):
+        main_graphics_layout = FourPlotsTAGraphics(self.BPMx,
+                                                   self.BPMy,
+                                                   self.CMx,
+                                                   self.CMy)
+        self.mainsplitter.widget(0).setParent(None)
+        self.mainsplitter.insertWidget(0, main_graphics_layout)
+
+    def __set_orbit_plot(self, BPM):
+        main_graphics_layout = OrbitGraphics(BPM)
+
+        self.mainsplitter.widget(0).setParent(None)
+        self.mainsplitter.insertWidget(0, main_graphics_layout)
+
     def __set_mode(self, work_type, source, bpm=''):
         if work_type == Mode.time_analysis:
             self.action_orbit_save.setEnabled(False)
@@ -158,8 +185,11 @@ class MainWindow(QMainWindow):
                                                 "orbit ({})".format(bpm))
             elif source == Mode.archiver:
                 self.current_mode_label.setText("Search kick from Archiver")
+            elif source == Mode.from_time_data:
+                self.current_mode_label.setText("Search kick from time data "
+                                                "({})".format(bpm))
 
 
 class Mode:
     none, time_analysis, orbit = range(3)
-    none, from_file, online, archiver = range(4)
+    none, from_file, online, from_time_data, archiver = range(5)

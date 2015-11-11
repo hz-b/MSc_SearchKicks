@@ -11,4 +11,4 @@ __email__ = "olivier.churlaud@helmholtz-berlin.de"
 __status__ = "Developpement"
 
 
-import IO
+from . import IO
