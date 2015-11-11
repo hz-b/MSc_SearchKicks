@@ -75,6 +75,12 @@ class FourPlotsTAGraphics(FourPlotsGraphics):
                     self.__on_region_changed
                     )
 
+    def get_region(self):
+        r = self.rgn[0].getRegion()
+        begin = max(int(r[0]), 0)
+        end = min(int(r[1]), self.BPMx.shape[1])
+        return begin, end
+
     @pyqtSlot()
     def __on_region_changed(self):
         r = self.sender().getRegion()
@@ -114,9 +120,18 @@ class FourPlotsPickGraphics(FourPlotsGraphics):
 
 
 class OrbitGraphics(pg.GraphicsLayoutWidget):
-    def __init__(self, BPM, parent=None):
+    def __init__(self, phase, orbit, parent=None):
         pg.GraphicsLayoutWidget.__init__(self, parent)
-        self.BPM = BPM
+        self.orbit = orbit
+        self.phase = phase
 
         orbit_plot = self.addPlot(0)
-        orbit_plot.addItem(pg.PlotDataItem(self.BPM, pen=(0,0,255)))
+        orbit_plot.addItem(pg.PlotDataItem(x=self.phase
+                                           y=self.orbit,
+                                           pen=(0, 0, 255)))
+
+    def addSignal(self, phase_th, sinus_signal):
+        orbit_plot = self.addPlot(0)
+        orbit_plot.addItem(pg.PlotDataItem(x=phase_th,
+                                           y=sinus_signal,
+                                           pen=(0, 255, 0)))

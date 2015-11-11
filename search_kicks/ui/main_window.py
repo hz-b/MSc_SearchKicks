@@ -24,7 +24,15 @@ class MainWindow(QMainWindow):
        It is written with PyQt4
     """
 
-    BPMx, BPMy, CMx, CMy = [0, 0, 0, 0]
+    time_analysis = dict({'BPMx': 0,
+                          'BPMy': 0,
+                          'CMx': 0,
+                          'CMy': 0
+                          })
+    orbit = dict({'orbit': 0,
+                  'phase': 0,
+                  'tune': 0
+                  })
     reference_orbit = 0
     mode = 0
 
@@ -42,13 +50,15 @@ class MainWindow(QMainWindow):
     # Slots
     @pyqtSlot()
     def on_execute_btn_clicked(self):
-        orbit, phase, tune = self.__get_orbit_data()
-        kick_phase, sin_coeff = skcore.get_kick(orbit, phase, tune)
+        if self.mode == Mode.orbit:
+            kick_phase, sin_coeff = skcore.get_kick(self.orbit['orbit'],
+                                                    self.orbit['phase'],
+                                                    self.orbit['tune'])
 
-        sinus_signal, phase_th = skcore.build_sinus(kick_phase,
-                                                    tune,
-                                                    sin_coeff
-                                                    )
+            sinus_signal, phase_th = skcore.build_sinus(kick_phase,
+                                                        self.orbit['tune'],
+                                                        sin_coeff)
+            self.main_graphics_layout.addSignal(phase_th, sinus_signal)
 
     @pyqtSlot(bool)
     def on_action_orbit_load_current_bpmx_triggered(self, checked=False):
@@ -68,8 +78,12 @@ class MainWindow(QMainWindow):
             if dialog.exec_() == QDialog.Accepted:
                 chosen_sample = dialog.get_sample()
                 family = dialog.get_family()
-                BPM = (BPMx if family == 'BPMx' else BPMy).transpose()
-                self.__set_orbit_plot(BPM[chosen_sample, :])
+                self.orbit = (
+                              BPMx[:, chosen_sample]
+                              if family == 'BPMx'
+                              else BPMy[:, chosen_sample]
+                              ).transpose()
+                self.__set_orbit_plot()
                 self.__set_mode(Mode.orbit, Mode.from_time_data, family)
                 self.__add_message("Orbit loaded from file {}, "
                                    "sample {}".format(filename, chosen_sample))
@@ -108,7 +122,11 @@ class MainWindow(QMainWindow):
         dialog = dialogs.LoadFileDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             filename = dialog.get_filename()
-            self.BPMx, self.BPMy, self.CMx, self.CMy = \
+
+            self.time_analysis['BPMx'], \
+                self.time_analysis['BPMy'], \
+                self.time_analysis['CMx'], \
+                self.time_analysis['CMy'] = \
                 sktools.IO.load_timeanalys(filename)
 
             self.__set_time_analysis_plot()
@@ -123,9 +141,7 @@ class MainWindow(QMainWindow):
             filename = dialog.get_filename()
             extension = dialog.get_file_extension()
 
-            r = self.mainsplitter.widget(0).rgn1.getRegion()
-            begin = max(math.floor(r[0]), 0)
-            end = min(math.floor(r[1]), self.BPMx.shape[1])
+            begin, end = self.main_grahics_layout.get_region()
 
             if begin >= end:
                 QMessageBox.critical(self,
@@ -134,13 +150,14 @@ class MainWindow(QMainWindow):
                                      "Please proceed again."
                                      )
             else:
-                sktools.IO.save_timeanalys(filename,
-                                           extension,
-                                           self.BPMx[:, begin:end],
-                                           self.BPMy[:, begin:end],
-                                           self.CMx[:, begin:end],
-                                           self.CMy[:, begin:end]
-                                           )
+                sktools.IO.save_timeanalys(
+                    filename,
+                    extension,
+                    self.time_analysis['BPMx'][:, begin:end],
+                    self.time_analysis['BPMy'][:, begin:end],
+                    self.time_analysis['CMx'][:, begin:end],
+                    self.time_analysis['CMy'][:, begin:end]
+                    )
 
                 self.__add_message("File saved in {}".format(filename))
 
@@ -149,25 +166,21 @@ class MainWindow(QMainWindow):
         self.message_area.addItem(datetime + "\t " + message)
         self.statusBar().showMessage(message)
 
-    def __get_orbit_data(self):
-
-        return self.orbit, self.phase, self.tune
-
     def __set_time_analysis_plot(self):
-        main_graphics_layout = FourPlotsTAGraphics(self.BPMx,
-                                                   self.BPMy,
-                                                   self.CMx,
-                                                   self.CMy)
-        self.mainsplitter.widget(0).setParent(None)
-        self.mainsplitter.insertWidget(0, main_graphics_layout)
+        self.main_graphics_layout.setParent(None)
+        self.main_graphics_layout = FourPlotsTAGraphics(
+            self.time_analysis['BPMx'],
+            self.time_analysis['BPMy'],
+            self.time_analysis['CMx'],
+            self.time_analysis['CMy'])
+        self.mainsplitter.insertWidget(0, self.main_graphics_layout)
 
-    def __set_orbit_plot(self, BPM):
-        main_graphics_layout = OrbitGraphics(BPM)
+    def __set_orbit_plot(self):
+        self.main_graphics_layout.setParent(None)
+        self.main_graphics_layout = OrbitGraphics(self.orbit)
+        self.mainsplitter.insertWidget(0, self.main_graphics_layout)
 
-        self.mainsplitter.widget(0).setParent(None)
-        self.mainsplitter.insertWidget(0, main_graphics_layout)
-
-    def __set_mode(self, work_type, source, bpm=''):
+    def __set_mode(self, work_type, source, family=''):
         if work_type == Mode.time_analysis:
             self.action_orbit_save.setEnabled(False)
             self.action_timeanalys_save.setEnabled(True)
@@ -182,12 +195,12 @@ class MainWindow(QMainWindow):
                 self.current_mode_label.setText("Search kick from file")
             elif source == Mode.online:
                 self.current_mode_label.setText("Search kick from current "
-                                                "orbit ({})".format(bpm))
+                                                "orbit ({})".format(family))
             elif source == Mode.archiver:
                 self.current_mode_label.setText("Search kick from Archiver")
             elif source == Mode.from_time_data:
                 self.current_mode_label.setText("Search kick from time data "
-                                                "({})".format(bpm))
+                                                "({})".format(family))
 
 
 class Mode:

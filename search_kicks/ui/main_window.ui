@@ -38,7 +38,7 @@
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
-      <widget class="QGraphicsView" name="graphicsView"/>
+      <widget class="QGraphicsView" name="main_graphics_layout"/>
       <widget class="QSplitter" name="splitter">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -192,7 +192,7 @@
   </action>
   <action name="action_orbit_from_time_data">
    <property name="text">
-    <string>Pick from time data</string>
+    <string>&amp;Pick from time data</string>
    </property>
   </action>
  </widget>
