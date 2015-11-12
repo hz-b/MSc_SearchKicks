@@ -1,3 +1,4 @@
+# SearchKicks [To be renamed]
 ## How to use
 
 TODO: create setup.py and put it in python path, with simple name for call
