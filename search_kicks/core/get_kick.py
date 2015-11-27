@@ -23,8 +23,8 @@ def get_kick(orbit, phase, tune, plot=False):
             If True, plot the orbit with the kick position, else don't.
             Default to False.
 
-         Returns
-         -------
+        Returns
+        -------
             kick_phase : float
                 The phase where the kick was found.
             sin_coefficients : [a, b]
@@ -55,15 +55,15 @@ def get_kick(orbit, phase, tune, plot=False):
             best_rms = rms
 
             sin_coefficients = [b, c]
-            # find the phase between the BPM i-1 and i where
-            # sin(phase) = sin(phase -2pi*tune).
+            # find the phase between the BPM i and i+1 where
+            # sin(phase) = sin(phase - 2pi*tune).
             # It's easier to look in the first part of the phase_exp and then
             # add 2*pi*tune
             phase_previous = phase_exp[i]
             phase_next = phase_exp[i+1]
             interval = np.linspace(phase_previous, phase_next, 1000)
             idx_min = np.argmin(
-                abs(b*sin(interval + c) - b*sin(interval+c-2*pi*tune))
+                abs(b*sin(interval + c) - b*sin(interval+c+2*pi*tune))
                 )
             kick_phase = interval[idx_min]
 
