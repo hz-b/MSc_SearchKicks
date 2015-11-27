@@ -11,7 +11,18 @@ import scipy.io
 def load_timeanalys(filename):
     data = scipy.io.loadmat(filename)
 
+    # Check that the file is well formatted
+    if ('BPMx' not in data) and ('BPMy' not in data) \
+            and ('CMx' not in data) and ('CMx' not in data):
+        Exception("File is not well formated")
+
     sample_nb = data['difforbitX'].shape[1]
+
+    if data['difforbitY'].shape[1] != sample_nb \
+            and data['CMx'].shape[1] != sample_nb \
+            and data['CMy'].shape[1] != sample_nb:
+        Exception("File is not well formated")
+
     BPMx_nb = data['difforbitX'][0, 0].shape[0]
     BPMy_nb = data['difforbitY'][0, 0].shape[0]
     CMx_nb = data['CMx'][0, 0].shape[0]
@@ -39,6 +50,13 @@ def save_timeanalys(filename, BPMx, BPMy, CMx, CMy):
 
     sample_nb = BPMx.shape[1]
 
+    # Check that the data are well formatted
+    if BPMy.shape[1] != sample_nb \
+            and CMx.shape[1].shape[1] != sample_nb \
+            and CMy.shape[1] != sample_nb:
+        Exception("Data are not well formatted (must have the same number of "
+                  "samples, ie. elements per row)")
+
     data = {'difforbitX': np.empty((1, sample_nb), dtype=object),
             'difforbitY': np.empty((1, sample_nb), dtype=object),
             'CMx': np.empty((1, sample_nb), dtype=object),
@@ -50,7 +68,6 @@ def save_timeanalys(filename, BPMx, BPMy, CMx, CMy):
         data['CMx'][0, i] = CMx[:, i, np.newaxis]
         data['CMy'][0, i] = CMy[:, i, np.newaxis]
 
-    print(filename)
     scipy.io.savemat(filename, data)
 
     return True
@@ -58,9 +75,23 @@ def save_timeanalys(filename, BPMx, BPMy, CMx, CMy):
 
 def load_orbit(filename):
     data = scipy.io.loadmat(filename)
-    return data['orbit']
+
+    # Check that the file is well formatted
+    if ('orbit' not in data) and ('phase' not in data) \
+            and ('tune' not in data):
+        Exception("File is not well formated")
+
+    if data['orbit'].shape != data['phase'].shape:
+        Exception("File is not well formated")
+
+    return data['orbit'], data['phase'], data['tune']
 
 
-def save_orbit(filename, orbit):
+def save_orbit(filename, orbit, phase, tune):
+
+    # Check that the file is well formatted
+    if orbit.length != phase.length:
+        Exception("Data are not well formatted (must have the same length")
+
     scipy.io.savemat(filename, {'orbit': orbit})
     return True

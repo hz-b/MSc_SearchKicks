@@ -126,7 +126,7 @@ class OrbitGraphics(pg.GraphicsLayoutWidget):
         self.phase = phase
 
         orbit_plot = self.addPlot(0)
-        orbit_plot.addItem(pg.PlotDataItem(x=self.phase
+        orbit_plot.addItem(pg.PlotDataItem(#x=self.phase,
                                            y=self.orbit,
                                            pen=(0, 0, 255)))
 
