@@ -30,15 +30,8 @@ def build_sinus(kick_phase, tune, sin_coefficients):
     b = sin_coefficients[0]
     c = sin_coefficients[1]
 
-#    phase_th = np.linspace(0, 2*np.pi*tune, 1000)
-#    sinus_signal = np.concatenate(
-#        (
-#            b*np.sin(phase_th[:kick_id] + c),
-#            b*np.sin(2*phase_th[kick_id]-phase_th[kick_id:] + c)
-#        ))
-
     sinus_tmp = np.concatenate((b*np.sin(phase_tmp + c),
-                                b*np.sin(phase_tmp + c)))
+                                -b*np.sin(phase_tmp + c)))
 
     phase_exp = np.concatenate((phase_tmp-2*np.pi*tune,
                                 phase_tmp))

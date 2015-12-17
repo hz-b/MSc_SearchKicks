@@ -44,3 +44,9 @@ def save_orbit(filename, extension, orbit):
         return plaintext.save_orbit(filename, orbit)
     elif extension == "hdf5":
         NotImplementedError()
+
+
+def load_Smat(filename):
+    extension = filename.split('.')[-1]
+    if extension == "mat":
+        return matlab.load_Smat(filename)

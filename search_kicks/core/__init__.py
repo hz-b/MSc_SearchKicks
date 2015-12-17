@@ -6,5 +6,5 @@
 """
 
 from .build_sinus import build_sinus
-from .fit_sinus import fit_sinus
+from .fit_sinus import fit_sinus, fit_sin_cos
 from .get_kick import get_kick

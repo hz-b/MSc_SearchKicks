@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import numpy as np
@@ -44,7 +43,7 @@ def get_kick(orbit, phase, tune, plot=False):
         signal_t = signal_exp[i:i+bpm_nb]
         phase_t = phase_exp[i:i+bpm_nb]
 
-        _, b, c = fit_sinus(signal_t, phase_t, False)
+        _, b, c = fit_sinus(signal_t, phase_t, 'inv', False)
 
         y = b*sin(c + phase_t)
 

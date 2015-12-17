@@ -43,7 +43,17 @@ def load_timeanalys(filename):
         for j in range(CMy_nb):
             CMy[j, i] = data['CMy'][0, i][j, 0]
 
-    return BPMx, BPMy, CMx, CMy
+    if 'Freq' in data:
+        freq = float(data['Freq'][0])
+    else:
+        freq = None
+
+    if 'bpms' in data:
+        BPMs_names = data['bpms']
+    else:
+        BPMs_names = None
+
+    return BPMx, BPMy, CMx, CMy, BPMs_names, freq
 
 
 def save_timeanalys(filename, BPMx, BPMy, CMx, CMy):
@@ -95,3 +105,15 @@ def save_orbit(filename, orbit, phase, tune):
 
     scipy.io.savemat(filename, {'orbit': orbit})
     return True
+
+
+def load_Smat(filename):
+    smat = scipy.io.loadmat('../_data/Smat-CM-Standard_HMI.mat')
+
+    if 'Rmat' not in smat:
+        Exception("Cannot find Rmat structure. Check the file you provided.")
+
+    Smat_xx = smat['Rmat'][0, 0]['Data']
+    Smat_yy = smat['Rmat'][1, 1]['Data']
+
+    return Smat_xx, Smat_yy

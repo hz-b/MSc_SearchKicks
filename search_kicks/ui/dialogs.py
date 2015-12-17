@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from PyQt4.QtCore import pyqtSlot, pyqtSignal, QString
+from PyQt4.QtCore import pyqtSlot, pyqtSignal, QString, Qt
 from PyQt4 import QtGui
 
 import time
 
-from search_kicks.ui.time_analysis_graphics import FourPlotsPickGraphics
+from search_kicks.ui.graphics import (FourPlotsPickGraphics,
+                                      TwoPlotsPickGraphics)
 
 
 class MyDialog(QtGui.QDialog):
@@ -135,12 +136,12 @@ class LineEditFocus(QtGui.QLineEdit):
 
 
 class PickOrbitDialog(MyDialog):
-    def __init__(self, BPMx, BPMy, CMx, CMy, parent=None):
+    def __init__(self, BPMx, BPMy, CMx, CMy, freq, parent=None):
         MyDialog.__init__(self, parent)
 
         self.setWindowTitle("Pick an orbit")
         self.form_layout = QtGui.QFormLayout(self)
-        self.sample_picker = FourPlotsPickGraphics(BPMx, BPMy, CMx, CMy)
+        self.sample_picker = FourPlotsPickGraphics(BPMx, BPMy, CMx, CMy, freq)
         self.form_layout.addRow(self.sample_picker)
         self.family_edit = QtGui.QComboBox()
         self.family_edit.addItem('BPMx')
@@ -153,4 +154,34 @@ class PickOrbitDialog(MyDialog):
         return self.sample_picker.get_sample()
 
     def get_family(self):
-        return self.family_edit.currentText()
+        return str(self.family_edit.currentText())
+
+
+class PickFrequencyDialog(MyDialog):
+    def __init__(self, BPM, fs, parent=None):
+        MyDialog.__init__(self, parent)
+
+        self.setWindowTitle("Pick a frequency")
+        self.form_layout = QtGui.QFormLayout(self)
+        self.freq_picker = TwoPlotsPickGraphics(BPM, fs)
+        self.form_layout.addRow(self.freq_picker)
+        self.freq_edit = QtGui.QDoubleSpinBox()
+        self.freq_edit.setDecimals(6)
+        self.form_layout.addRow("Frequency", self.freq_edit)
+        self.main_layout.insertLayout(0, self.form_layout)
+
+        self.freq_picker.frequency_changed.connect(self.change_frequency)
+        self.freq_edit.valueChanged.connect(self.freq_value_changed)
+
+        self.freq_edit.setValue(self.get_frequency())
+
+    def get_frequency(self):
+        return self.freq_picker.get_frequency()
+
+    @pyqtSlot(float)
+    def change_frequency(self, value):
+        self.freq_edit.setValue(value)
+
+    @pyqtSlot(float)
+    def freq_value_changed(self, value):
+        self.freq_picker.set_frequency(value)

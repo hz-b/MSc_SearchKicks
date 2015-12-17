@@ -7,12 +7,14 @@ from numpy import cos, sin
 import matplotlib.pyplot as plt
 
 
-def fit_sinus(signal, phase, offset_opt=True, plot=False):
+def fit_sinus(signal, phase, method, offset_opt=True, plot=False):
     """ Find a sinus that fits with the signal.
 
         The funtion to fit with is
         y = a + b1*cos(d*t) + b2*sin(d*t)
           = a + b*sin(d*t + c)
+
+        It internally calls fit_sin_cos(signal, phase, offset_opt, False)
 
         Parameters
         ----------
@@ -20,6 +22,8 @@ def fit_sinus(signal, phase, offset_opt=True, plot=False):
             Signal to be approximated.
         phase : np.array
             Argument of the sinus. in `a + b*sin(c+d*t)` it would be `d*t`
+        method: string
+            Which method to use: 'inv' or 'sum'
         offset_opt : bool, optional.
             If False, the fit function is `b*sin(c + phase)`, else it is
             is `a + b*sin(c + phase)`. Default to True.
@@ -35,6 +39,62 @@ def fit_sinus(signal, phase, offset_opt=True, plot=False):
             The `b` in `a + b*sin(c + phase)`.
         phase_shift : float
             The `c` in `a + b*sin(c + phase)`.
+
+    """
+
+    if not np.isscalar(offset_opt) or not np.isscalar(plot):
+        TypeError('Arguments 4 and 5 must be booleans')
+    if method not in ['inv', 'sum']:
+        ValueError("Argument 3 must be 'inv' or 'sum'")
+
+    offset, amp_sin, amp_cos = fit_sin_cos(signal, phase, method,
+                                           offset_opt, False)
+
+    amplitude = np.linalg.norm([amp_sin, amp_cos])
+    # atan2 keeps the information of the sign of the b1 and b2
+    phase_shift = atan2(amp_cos, amp_sin)
+
+    if plot:
+        plt.figure()
+        y = offset + amplitude*sin(phase + phase_shift)
+        plt.plot(phase, signal, '+r')
+        plt.plot(phase, y, '-b')
+
+        plt.grid(True)
+
+    return offset, amplitude, phase_shift
+
+
+def fit_sin_cos(signal, phase, method, offset_opt=True, plot=False):
+    """ Find a sum of sinus and cosinus that fits with the signal.
+
+        The funtion to fit with is
+        y = a + b1*cos(d*t) + b2*sin(d*t)
+
+        Parameters
+        ----------
+        signal : np.array
+            Signal to be approximated.
+        phase : np.array
+            Argument of the sinus. in `a + b*sin(c+d*t)` it would be `d*t`
+        method: string
+            Which method to use: 'inv' or 'sum'
+        offset_opt : bool, optional.
+            If False, the fit function is `b*sin(c + phase)`, else it is
+            is `a + b*sin(c + phase)`. Default to True.
+        plot : bool, optional.
+            If True, plot the signal and the calculated sinus together.
+            Default to False.
+
+        Returns
+        -------
+        offset : float
+            The `a` in `a + b1*sin(phase) + b2*cos(phase)`.
+            If offset_opt is False, it is 0.
+        amp_sin : float
+            The `b1` in `a + b1*sin(phase) + b2*cos(phase)`.
+        amp_cos : float
+            The `b2` in `a + b1*sin(phase) + b2*cos(phase)`.
 
     """
 
@@ -55,10 +115,50 @@ def fit_sinus(signal, phase, offset_opt=True, plot=False):
     if phase.shape[1] != 1 or signal.shape[1] != 1:
         ValueError('Arguments 1 and 2 must be (n,1)-arrays')
     if not np.isscalar(offset_opt) or not np.isscalar(plot):
-        TypeError('Arguments 3 and 4 must be booleans')
+        TypeError('Arguments 4 and 5 must be booleans')
+    if method not in ['inv', 'sum']:
+        ValueError("Argument 3 must be 'inv' or 'sum'")
+
+    offset, amp_sin, amp_cos = 0, 0, 0
+    if method == "inv":
+        offset, amp_sin, amp_cos = _fit_with_inversion(signal, phase,
+                                                       offset_opt)
+    elif method == "sum":
+        offset, amp_sin, amp_cos = _fit_with_sum(signal, phase,
+                                                 offset_opt)
+
+    if plot:
+        plt.figure()
+        y = offset + amp_sin*sin(phase) + amp_cos*cos(phase)
+        plt.plot(phase, signal, '+r')
+        plt.plot(phase, y, '-b')
+
+        plt.grid(True)
+
+    return offset, amp_sin, amp_cos
+
+
+def _fit_with_sum(signal, phase, offset_opt):
+
+    N = signal.size
+    ssin = sin(phase)
+    scos = cos(phase)
 
     if offset_opt:
-        # set constant term
+        offset = sum(signal)[0]/N
+    else:
+        offset = 0.
+
+    amp_sin = sum(ssin*signal)[0]*2/N
+    amp_cos = sum(scos*signal)[0]*2/N
+
+    return offset, amp_sin, amp_cos
+
+
+def _fit_with_inversion(signal, phase, offset_opt):
+
+    # set constant term
+    if offset_opt:
         constant = np.ones(phase.shape)
     else:
         constant = np.zeros(phase.shape)
@@ -70,16 +170,7 @@ def fit_sinus(signal, phase, offset_opt=True, plot=False):
         )
     abc, residual, _, _ = np.linalg.lstsq(eq_matrix, signal)
     offset = abc[0, 0]
-    amplitude = np.linalg.norm(abc[1:3, 0])
-    # atan2 keeps the information of the sign of the b1 and b2
-    phase_shift = atan2(abc[2, 0], abc[1, 0])
+    amp_sin = abc[1, 0]
+    amp_cos = abc[2, 0]
 
-    if plot:
-        plt.figure()
-        y = offset + amplitude*sin(phase + phase_shift)
-        plt.plot(phase, signal, '+r')
-        plt.plot(phase, y, '-b')
-
-        plt.grid(True)
-
-    return offset, amplitude, phase_shift
+    return offset, amp_sin, amp_cos

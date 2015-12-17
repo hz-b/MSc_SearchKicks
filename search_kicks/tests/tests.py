@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import matplotlib.pyplot as plt
 import sys
 import os
 
@@ -11,26 +12,69 @@ sys.path.append(__my_dir+"/..")
 import core as skcore
 
 
-def test_fit_sinus():
+def test_fit_sinus(signal, phase):
     print("\n==========================")
     print("Start test for fit_sinus()")
     print("==========================")
-    phase = 2*np.pi*np.arange(1, 21).T/10
-    signal_clean = 2*np.sin(phase+1.4) + 1
-    noise = np.random.random(phase.size)*2 - 1
-    signal = signal_clean + noise
 
     offset, amplitude, phase_shift = skcore.fit_sinus(signal,
                                                       phase,
+                                                      'sum',
                                                       True,
                                                       True)
-    print("offset = {}\namplitude = {}\nphase_shift = {}".format(offset,
-                                                                 amplitude,
-                                                                 phase_shift
-                                                                 ))
 
+    offset2, amplitude2, phase_shift2 = skcore.fit_sinus(signal,
+                                                         phase,
+                                                         'inv',
+                                                         True,
+                                                         True)
+    print("'sum'\n"
+          "\toffset = {}\n"
+          "\tamplitude = {}\n"
+          "\tphase_shift = {}".format(offset,
+                                      amplitude,
+                                      phase_shift
+                                      ))
+    print("'inv'\n"
+          "\toffset = {}\n"
+          "\tamplitude = {}\n"
+          "\tphase_shift = {}".format(offset2,
+                                      amplitude2,
+                                      phase_shift2
+                                      ))
 
-# The created orbit doesn't work, because it must be smooth
+def test_fit_sin_cos(signal, phase):
+    print("\n==========================")
+    print("Start test for fit_sin_cos()")
+    print("==========================")
+
+    offset, amplitude_s, amplitude_c = skcore.fit_sin_cos(signal,
+                                                        phase,
+                                                        'sum',
+                                                        True,
+                                                        True)
+
+    offset2, amplitude_s2, amplitude_c2 = skcore.fit_sin_cos(signal,
+                                                           phase,
+                                                           'inv',
+                                                           True,
+                                                           True)
+    print("'sum'\n"
+          "\toffset = {}\n"
+          "\tamplitude sinus = {}\n"
+          "\tamplitude cosinus = {}".format(offset,
+                                            amplitude_s,
+                                            amplitude_c
+                                            ))
+    print("'inv'\n"
+          "\toffset = {}\n"
+          "\tamplitude sinus = {}\n"
+          "\tamplitude cosinus = {}".format(offset2,
+                                            amplitude_s2,
+                                            amplitude_c2
+                                            ))
+
+# The created orbit doesn't work, because it must be smooth [closed orbit]
 def test_get_kick():
     print("\n=========================")
     print("Start test for get_kick()")
@@ -58,5 +102,13 @@ def test_get_kick():
     print("kick set found at {}".format(kick_found/(2*np.pi)))
 
 if __name__ == "__main__":
-    test_fit_sinus()
+    plt.close('all')
+
+    phase = 2*np.pi*np.arange(1, 41).T/10
+    signal_clean = 2*np.sin(phase+1.4) + 1
+    noise = np.random.random(phase.size)*2 - 1
+    signal = signal_clean + noise
+
+    test_fit_sinus(signal, phase)
+    test_fit_sin_cos(signal, phase)
     test_get_kick()
