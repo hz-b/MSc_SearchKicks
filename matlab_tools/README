@@ -1,0 +1,14 @@
+
+Olivier CHURLAUD <olivier.churlaud@helmholtz-berlin.de>
+
+
+What is used for what?
+======================
+
+* translateAndreasFile.m
+    In order to be readable by Search_kicks, the matlab data should have a 
+    given shape. This one deals with Andreas' dumps.
+* translatescript.m
+    A script that takes all files of a given folder and given certain 
+    parameters, change their shape with the `translateAndreasFile` function
+
