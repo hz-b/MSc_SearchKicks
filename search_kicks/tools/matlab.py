@@ -14,14 +14,14 @@ def load_timeanalys(filename):
     # Check that the file is well formatted
     if ('BPMx' not in data) and ('BPMy' not in data) \
             and ('CMx' not in data) and ('CMx' not in data):
-        Exception("File is not well formated")
+        raise Exception("File is not well formated")
 
     sample_nb = data['difforbitX'].shape[1]
 
     if data['difforbitY'].shape[1] != sample_nb \
             and data['CMx'].shape[1] != sample_nb \
             and data['CMy'].shape[1] != sample_nb:
-        Exception("File is not well formated")
+        raise Exception("File is not well formated")
 
     BPMx_nb = data['difforbitX'][0, 0].shape[0]
     BPMy_nb = data['difforbitY'][0, 0].shape[0]
@@ -64,8 +64,8 @@ def save_timeanalys(filename, BPMx, BPMy, CMx, CMy):
     if BPMy.shape[1] != sample_nb \
             and CMx.shape[1].shape[1] != sample_nb \
             and CMy.shape[1] != sample_nb:
-        Exception("Data are not well formatted (must have the same number of "
-                  "samples, ie. elements per row)")
+        raise Exception("Data are not well formatted (must have the same "
+                        "number of samples, ie. elements per row)")
 
     data = {'difforbitX': np.empty((1, sample_nb), dtype=object),
             'difforbitY': np.empty((1, sample_nb), dtype=object),
@@ -89,10 +89,10 @@ def load_orbit(filename):
     # Check that the file is well formatted
     if ('orbit' not in data) and ('phase' not in data) \
             and ('tune' not in data):
-        Exception("File is not well formated")
+        raise Exception("File is not well formated")
 
     if data['orbit'].shape != data['phase'].shape:
-        Exception("File is not well formated")
+        raise Exception("File is not well formated")
 
     return data['orbit'], data['phase'], data['tune']
 
@@ -101,17 +101,19 @@ def save_orbit(filename, orbit, phase, tune):
 
     # Check that the file is well formatted
     if orbit.length != phase.length:
-        Exception("Data are not well formatted (must have the same length")
+        raise Exception("Data are not well formatted (must have the same "
+                        "length")
 
     scipy.io.savemat(filename, {'orbit': orbit})
     return True
 
 
 def load_Smat(filename):
-    smat = scipy.io.loadmat('../_data/Smat-CM-Standard_HMI.mat')
+    smat = scipy.io.loadmat(filename)
 
     if 'Rmat' not in smat:
-        Exception("Cannot find Rmat structure. Check the file you provided.")
+        raise Exception("Cannot find Rmat structure. Check the file you "
+                        "provided.")
 
     Smat_xx = smat['Rmat'][0, 0]['Data']
     Smat_yy = smat['Rmat'][1, 1]['Data']

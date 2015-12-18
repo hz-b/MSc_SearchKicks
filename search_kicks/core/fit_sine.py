@@ -7,8 +7,8 @@ from numpy import cos, sin
 import matplotlib.pyplot as plt
 
 
-def fit_sinus(signal, phase, method, offset_opt=True, plot=False):
-    """ Find a sinus that fits with the signal.
+def fit_sine(signal, phase, method, offset_opt=True, plot=False):
+    """ Find a sine that fits with the signal.
 
         The funtion to fit with is
         y = a + b1*cos(d*t) + b2*sin(d*t)
@@ -21,14 +21,14 @@ def fit_sinus(signal, phase, method, offset_opt=True, plot=False):
         signal : np.array
             Signal to be approximated.
         phase : np.array
-            Argument of the sinus. in `a + b*sin(c+d*t)` it would be `d*t`
+            Argument of the sine. in `a + b*sin(c+d*t)` it would be `d*t`
         method: string
             Which method to use: 'inv' or 'sum'
         offset_opt : bool, optional.
             If False, the fit function is `b*sin(c + phase)`, else it is
             is `a + b*sin(c + phase)`. Default to True.
         plot : bool, optional.
-            If True, plot the signal and the calculated sinus together.
+            If True, plot the signal and the calculated sine together.
             Default to False.
 
         Returns
@@ -43,9 +43,9 @@ def fit_sinus(signal, phase, method, offset_opt=True, plot=False):
     """
 
     if not np.isscalar(offset_opt) or not np.isscalar(plot):
-        TypeError('Arguments 4 and 5 must be booleans')
+        raise TypeError('Arguments 4 and 5 must be booleans')
     if method not in ['inv', 'sum']:
-        ValueError("Argument 3 must be 'inv' or 'sum'")
+        raise ValueError("Argument 3 must be 'inv' or 'sum'")
 
     offset, amp_sin, amp_cos = fit_sin_cos(signal, phase, method,
                                            offset_opt, False)
@@ -66,24 +66,24 @@ def fit_sinus(signal, phase, method, offset_opt=True, plot=False):
 
 
 def fit_sin_cos(signal, phase, method, offset_opt=True, plot=False):
-    """ Find a sum of sinus and cosinus that fits with the signal.
+    """ Find a sum of sine and cosine that fits with the signal.
 
         The funtion to fit with is
-        y = a + b1*cos(d*t) + b2*sin(d*t)
+        `y = a + b1*cos(d*t) + b2*sin(d*t)`
 
         Parameters
         ----------
         signal : np.array
             Signal to be approximated.
         phase : np.array
-            Argument of the sinus. in `a + b*sin(c+d*t)` it would be `d*t`
+            Argument of the sine. in `a + b*sin(c+d*t)` it would be `d*t`
         method: string
             Which method to use: 'inv' or 'sum'
         offset_opt : bool, optional.
             If False, the fit function is `b*sin(c + phase)`, else it is
             is `a + b*sin(c + phase)`. Default to True.
         plot : bool, optional.
-            If True, plot the signal and the calculated sinus together.
+            If True, plot the signal and the calculated sine together.
             Default to False.
 
         Returns
@@ -111,13 +111,13 @@ def fit_sin_cos(signal, phase, method, offset_opt=True, plot=False):
 
     # check errors
     if phase.shape[0] != signal.shape[0]:
-        ValueError('Arguments 1 and 2 must have the same length')
+        raise ValueError('Arguments 1 and 2 must have the same length')
     if phase.shape[1] != 1 or signal.shape[1] != 1:
-        ValueError('Arguments 1 and 2 must be (n,1)-arrays')
+        raise ValueError('Arguments 1 and 2 must be (n,1)-arrays')
     if not np.isscalar(offset_opt) or not np.isscalar(plot):
-        TypeError('Arguments 4 and 5 must be booleans')
+        raise TypeError('Arguments 4 and 5 must be booleans')
     if method not in ['inv', 'sum']:
-        ValueError("Argument 3 must be 'inv' or 'sum'")
+        raise ValueError("Argument 3 must be 'inv' or 'sum'")
 
     offset, amp_sin, amp_cos = 0, 0, 0
     if method == "inv":

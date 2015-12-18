@@ -5,12 +5,18 @@ from PyQt4.QtCore import pyqtSlot, pyqtSignal, QString, Qt
 from PyQt4 import QtGui
 
 import time
+import numpy as np
 
 from search_kicks.ui.graphics import (FourPlotsPickGraphics,
+                                      TwoPlotsGraphics,
                                       TwoPlotsPickGraphics)
 
+import search_kicks.tools as sktools
+import search_kicks.core as skcore
 
-class MyDialog(QtGui.QDialog):
+
+class DialogWithButtons(QtGui.QDialog):
+    """ Custom dialog providing Accepted/Rejected buttons """
     _filename = ""
 
     def __init__(self, parent=None):
@@ -29,11 +35,12 @@ class MyDialog(QtGui.QDialog):
         self.button_box.rejected.connect(self.reject)
 
 
-class MetaFileDialog(MyDialog):
+class MetaFileDialog(DialogWithButtons):
+    """ Custom dialog with fileEdit """
     _filename = ""
 
     def __init__(self, parent=None):
-        MyDialog.__init__(self, parent)
+        DialogWithButtons.__init__(self, parent)
         self.button_box.button(QtGui.QDialogButtonBox.Ok).setEnabled(False)
 
         self.form_layout = QtGui.QFormLayout()
@@ -126,6 +133,7 @@ class SaveOrbitDialog(SaveFileDialog):
 
 
 class LineEditFocus(QtGui.QLineEdit):
+    """ Extended QLineEdit that emits a `pressed` signal on click """
     pressed = pyqtSignal()
 
     def __init__(self, parent=None):
@@ -135,12 +143,15 @@ class LineEditFocus(QtGui.QLineEdit):
         self.pressed.emit()
 
 
-class PickOrbitDialog(MyDialog):
+class PickOrbitDialog(DialogWithButtons):
+    """ Dialog composed of 4 plot with a value selection tool and a QComboBox
+        to select the family too analyze.
+    """
     def __init__(self, BPMx, BPMy, CMx, CMy, freq, parent=None):
-        MyDialog.__init__(self, parent)
+        DialogWithButtons.__init__(self, parent)
 
         self.setWindowTitle("Pick an orbit")
-        self.form_layout = QtGui.QFormLayout(self)
+        self.form_layout = QtGui.QFormLayout()
         self.sample_picker = FourPlotsPickGraphics(BPMx, BPMy, CMx, CMy, freq)
         self.form_layout.addRow(self.sample_picker)
         self.family_edit = QtGui.QComboBox()
@@ -157,12 +168,15 @@ class PickOrbitDialog(MyDialog):
         return str(self.family_edit.currentText())
 
 
-class PickFrequencyDialog(MyDialog):
+class PickFrequencyDialog(DialogWithButtons):
+    """ Dialog composed of two plot with a value selection tool connected to a
+        QDoubleSpinBox.
+    """
     def __init__(self, BPM, fs, parent=None):
-        MyDialog.__init__(self, parent)
+        DialogWithButtons.__init__(self, parent)
 
         self.setWindowTitle("Pick a frequency")
-        self.form_layout = QtGui.QFormLayout(self)
+        self.form_layout = QtGui.QFormLayout()
         self.freq_picker = TwoPlotsPickGraphics(BPM, fs)
         self.form_layout.addRow(self.freq_picker)
         self.freq_edit = QtGui.QDoubleSpinBox()
@@ -170,8 +184,8 @@ class PickFrequencyDialog(MyDialog):
         self.form_layout.addRow("Frequency", self.freq_edit)
         self.main_layout.insertLayout(0, self.form_layout)
 
-        self.freq_picker.frequency_changed.connect(self.change_frequency)
-        self.freq_edit.valueChanged.connect(self.freq_value_changed)
+        self.freq_picker.frequency_changed.connect(self._on_freq_picker_frequency_changed)
+        self.freq_edit.valueChanged.connect(self._on_freq_edit_valueChanged)
 
         self.freq_edit.setValue(self.get_frequency())
 
@@ -179,9 +193,62 @@ class PickFrequencyDialog(MyDialog):
         return self.freq_picker.get_frequency()
 
     @pyqtSlot(float)
-    def change_frequency(self, value):
+    def _on_freq_picker_frequency_changed(self, value):
         self.freq_edit.setValue(value)
 
     @pyqtSlot(float)
-    def freq_value_changed(self, value):
+    def _on_freq_edit_valueChanged(self, value):
         self.freq_picker.set_frequency(value)
+
+
+class ShowSinCosDialog(QtGui.QDialog):
+
+    maxval = 100
+    def __init__(self, valuesX, valuesY, position, f, parent=None):
+        QtGui.QDialog.__init__(self, parent)
+
+        self.valuesX = np.array([valuesX[0], valuesX[1]])
+        self.valuesY = np.array([valuesY[0], valuesY[1]])
+
+        self.setWindowTitle("Sine / Cosine for f="+str(f)+"Hz")
+        self.form_layout = QtGui.QFormLayout(self)
+        self.two_plots = TwoPlotsGraphics(self.valuesX, self.valuesY, position)
+        self.form_layout.addRow(self.two_plots)
+        self.slider = QtGui.QSlider(Qt.Horizontal)
+        self.slider.setRange(-self.maxval, self.maxval)
+        self.slider.setSliderPosition(0)
+        self.slider_edit = QtGui.QDoubleSpinBox()
+        self.slider_edit.setRange(-180, 180)
+        self.form_layout.addRow(self.slider_edit, self.slider)
+
+        self.kick_btn = QtGui.QPushButton("Get kick!")
+        self.form_layout.addRow(self.kick_btn)
+
+        self.slider.valueChanged.connect(self._on_slider_valueChanged)
+        self.slider_edit.valueChanged.connect(self._on_slider_edit_valueChanged)
+        self.kick_btn.clicked.connect(self._on_kick_btn_clicked)
+
+    @pyqtSlot(float)
+    def _on_slider_valueChanged(self, value):
+        self.slider_edit.setValue(value/float(self.maxval)*180)
+        self._update_graph_phase(value/float(self.maxval)*180)
+
+    @pyqtSlot(float)
+    def _on_slider_edit_valueChanged(self, value):
+        self.slider.setValue(int(round(value*self.maxval/180.)))
+
+    @pyqtSlot()
+    def _on_kick_btn_clicked(self):
+        raise NotImplementedError()
+
+    def _update_graph_phase(self, angle_deg):
+        valuesX = np.copy(self.valuesX)
+        valuesY = np.copy(self.valuesY)
+        valuesX[0,:], valuesX[1,:] = sktools.maths.rotate(
+            self.valuesX[0,:], self.valuesX[1,:], angle_deg, 'deg'
+            )
+        valuesY[0,:], valuesY[1,:] = sktools.maths.rotate(
+            self.valuesY[0,:], self.valuesY[1,:], angle_deg, 'deg'
+            )
+
+        self.two_plots.updateValues(valuesX, valuesY)

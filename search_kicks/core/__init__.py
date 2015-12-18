@@ -5,6 +5,14 @@
     used as a simple library or toolbox.
 """
 
-from .build_sinus import build_sinus
-from .fit_sinus import fit_sinus, fit_sin_cos
+__author__ = "Olivier CHURLAUD"
+__version__ = "0.1.0"
+__maintainer__ = ""
+__email__ = "olivier.churlaud@helmholtz-berlin.de"
+__status__ = "Developpement"
+
+
+from .build_sine import build_sine
+from .fit_sine import fit_sine, fit_sin_cos
 from .get_kick import get_kick
+from .time_analysis import extract_cos_sin_withfft

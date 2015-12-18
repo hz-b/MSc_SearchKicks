@@ -12,18 +12,18 @@ sys.path.append(__my_dir+"/..")
 import core as skcore
 
 
-def test_fit_sinus(signal, phase):
+def test_fit_sine(signal, phase):
     print("\n==========================")
-    print("Start test for fit_sinus()")
+    print("Start test for fit_sine()")
     print("==========================")
 
-    offset, amplitude, phase_shift = skcore.fit_sinus(signal,
+    offset, amplitude, phase_shift = skcore.fit_sine(signal,
                                                       phase,
                                                       'sum',
                                                       True,
                                                       True)
 
-    offset2, amplitude2, phase_shift2 = skcore.fit_sinus(signal,
+    offset2, amplitude2, phase_shift2 = skcore.fit_sine(signal,
                                                          phase,
                                                          'inv',
                                                          True,
@@ -61,15 +61,15 @@ def test_fit_sin_cos(signal, phase):
                                                            True)
     print("'sum'\n"
           "\toffset = {}\n"
-          "\tamplitude sinus = {}\n"
-          "\tamplitude cosinus = {}".format(offset,
+          "\tamplitude sine = {}\n"
+          "\tamplitude cosine = {}".format(offset,
                                             amplitude_s,
                                             amplitude_c
                                             ))
     print("'inv'\n"
           "\toffset = {}\n"
-          "\tamplitude sinus = {}\n"
-          "\tamplitude cosinus = {}".format(offset2,
+          "\tamplitude sine = {}\n"
+          "\tamplitude cosine = {}".format(offset2,
                                             amplitude_s2,
                                             amplitude_c2
                                             ))
@@ -89,7 +89,7 @@ def test_get_kick():
     noise = np.random.normal(0, 1, bpm_nb)
 
     kick = phase[i]+(phase[i+1]-phase[i])*away_ratio
-    orbit_full, phase_full = skcore.build_sinus(kick, tune, [1, 0])
+    orbit_full, phase_full = skcore.build_sine(kick, tune, [1, 0])
 
     for i in range(phase.size):
         idx = np.argmin(abs(phase_full-phase[i]))
@@ -109,6 +109,6 @@ if __name__ == "__main__":
     noise = np.random.random(phase.size)*2 - 1
     signal = signal_clean + noise
 
-    test_fit_sinus(signal, phase)
+    test_fit_sine(signal, phase)
     test_fit_sin_cos(signal, phase)
     test_get_kick()

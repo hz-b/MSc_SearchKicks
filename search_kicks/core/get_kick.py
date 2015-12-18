@@ -4,7 +4,7 @@ import numpy as np
 from numpy import sin, pi
 import matplotlib.pyplot as plt
 
-from . import fit_sinus, build_sinus
+from . import fit_sine, build_sine
 
 
 def get_kick(orbit, phase, tune, plot=False):
@@ -27,23 +27,23 @@ def get_kick(orbit, phase, tune, plot=False):
             kick_phase : float
                 The phase where the kick was found.
             sin_coefficients : [a, b]
-                a and b so that the sinus is a*sin(b+phase)
+                a and b so that the sine is a*sin(b+phase)
 
     """
     bpm_nb = orbit.size
     best_rms = 0
 
-    # duplicate the signal to find the sinus between the kick and its duplicate
+    # duplicate the signal to find the sine between the kick and its duplicate
     signal_exp = np.concatenate((orbit, orbit))
     phase_exp = np.concatenate((phase, phase + tune*2*pi))
 
-    # shift the sinus between each BPM and its duplicate and find the best
+    # shift the sine between each BPM and its duplicate and find the best
     # match
     for i in range(bpm_nb):
         signal_t = signal_exp[i:i+bpm_nb]
         phase_t = phase_exp[i:i+bpm_nb]
 
-        _, b, c = fit_sinus(signal_t, phase_t, 'inv', False)
+        _, b, c = fit_sine(signal_t, phase_t, 'inv', False)
 
         y = b*sin(c + phase_t)
 
@@ -72,11 +72,11 @@ def get_kick(orbit, phase, tune, plot=False):
         plt.xlabel(r'phase / $2 \pi$')
         plt.axvline(kick_phase/(2*pi), -2, 2)
 
-        sinus_signal, phase_th = build_sinus(kick_phase,
+        sine_signal, phase_th = build_sine(kick_phase,
                                              tune,
                                              sin_coefficients
                                              )
 
-        plt.plot(phase_th/(2*pi), sinus_signal)
+        plt.plot(phase_th/(2*pi), sine_signal)
 
     return kick_phase, sin_coefficients

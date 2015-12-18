@@ -73,8 +73,8 @@ class FourPlotsTAGraphics(FourPlotsGraphics):
         self.rgn = []
         for i in range(2):
             for j in range(2):
-                self.rgn.append(pg.LinearRegionItem(values=[max_value/5.,
-                                                            max_value/3.],
+                self.rgn.append(pg.LinearRegionItem(values=[0.,
+                                                            max_value],
                                                     bounds=[0, max_value]
                                                     )
                                 )
@@ -129,54 +129,71 @@ class FourPlotsPickGraphics(FourPlotsGraphics):
         for i in range(len(self.inf_line)):
             self.inf_line[i].setValue(v)
 
+class TwoPlotsGraphics(pg.GraphicsLayoutWidget):
+    xlabel = 'Position'
+    units_label = 'm'
 
-class TwoPlotsPickGraphics(pg.GraphicsLayoutWidget):
+    def __init__(self, values00, values10, x, parent=None):
+        pg.GraphicsLayoutWidget.__init__(self, parent)
+        self.values00 = values00
+        self.values10 = values10
+        self.x = x
+
+        self._plot_all()
+
+
+    def _plot_all(self):
+        plot00 = self.addPlot(0, 0)
+        plot10 = self.addPlot(1, 0)
+
+        plot00.disableAutoRange()
+        plot10.disableAutoRange()
+
+        values00_nb = self.values00.shape[0]
+        values10_nb = self.values10.shape[0]
+
+        for i in range(values00_nb):
+            plot00.addItem(
+                pg.PlotDataItem(self.x,
+                                self.values00[i,:],
+                                pen=(i, values00_nb)
+                                )
+                )
+        for i in range(values10_nb):
+            plot10.addItem(
+                pg.PlotDataItem(self.x,
+                                self.values10[i,:],
+                                pen=(i, values10_nb))
+                )
+
+        plot00.setLabel('bottom', text=self.xlabel, units=self.units_label)
+        plot10.setLabel('bottom', text=self.xlabel, units=self.units_label)
+
+        # autorange only after plots are added
+        plot00.autoRange()
+        plot10.autoRange()
+
+    def updateValues(self, values00, values10):
+        self.values00 = values00
+        self.values10 = values10
+        self.removeItem(self.getItem(0, 0))
+        self.removeItem(self.getItem(1, 0))
+        self._plot_all()
+
+
+class TwoPlotsPickGraphics(TwoPlotsGraphics):
+
     frequency_changed = pyqtSignal(float)
 
     def __init__(self, BPMs, fs, parent=None):
-        super(TwoPlotsPickGraphics, self).__init__()
-        pg.GraphicsLayoutWidget.__init__(self, parent)
+        values00, values10, freqs = self._prepare_values(BPMs['BPMx'],
+                                                         BPMs['BPMy'],
+                                                         fs)
+        self.xlabel = 'Frequency'
+        self.units_label = 'Hz'
+        TwoPlotsGraphics.__init__(self, values00, values10, freqs, parent)
 
-        self.freqs = pg.numpy.fft.fftfreq(BPMs['BPMx'].shape[1], 1/fs)
-        self.freqs = self.freqs[:self.freqs.size/2]
-
-        BPMy_nb = BPMs['BPMx'].shape[0]
-        BPMx_nb = BPMs['BPMy'].shape[0]
-
-        BPMx_plots = self.addPlot(0, 0)
-        BPMy_plots = self.addPlot(1, 0)
-
-        BPMx_plots.disableAutoRange()
-        BPMy_plots.disableAutoRange()
-
-        for i in range(BPMx_nb):
-            fftx = pg.numpy.fft.fft(BPMs['BPMx'][i, :])
-            fftx = fftx[:fftx.size/2]
-            fftx[0] = 0
-            BPMx_plots.addItem(
-                pg.PlotDataItem(self.freqs,
-                                pg.numpy.abs(fftx),
-                                pen=(i, BPMx_nb)
-                                )
-                )
-        for i in range(BPMy_nb):
-            fftx = pg.numpy.fft.fft(BPMs['BPMx'][i, :])
-            fftx = fftx[:fftx.size/2]
-            fftx[0] = 0
-            BPMy_plots.addItem(
-                pg.PlotDataItem(self.freqs,
-                                pg.numpy.abs(fftx),
-                                pen=(i, BPMy_nb))
-                )
-
-        BPMx_plots.setLabel('bottom', text='frequencies', units='Hz')
-        BPMy_plots.setLabel('bottom', text='frequencies', units='Hz')
-
-        # autorange only after plots are added
-        BPMx_plots.autoRange()
-        BPMy_plots.autoRange()
-
-        max_value = max(self. freqs)
+        max_value = max(freqs)
         self.inf_line = []
         for i in range(2):
             self.inf_line.append(pg.InfiniteLine(pos=max_value/2.,
@@ -204,6 +221,20 @@ class TwoPlotsPickGraphics(pg.GraphicsLayoutWidget):
             self.inf_line[i].setValue(v)
         self.frequency_changed.emit(v)
 
+    def _prepare_values(self, input00, input01, fs):
+        fftx = pg.numpy.fft.fft(input00, axis=1)
+        values00 = pg.numpy.abs(fftx[:,:fftx.shape[1]/2])
+        values00[:, 0] = 0
+
+        fftx = pg.numpy.fft.fft(input01, axis=1)
+        values10 = pg.numpy.abs(fftx[:,:fftx.shape[1]/2])
+        values10[:, 0] = 0
+
+        freqs = pg.numpy.fft.fftfreq(input00.shape[1], 1/fs)
+        freqs = freqs[:freqs.size/2]
+
+        return values00, values10, freqs
+
 
 class OrbitGraphics(pg.GraphicsLayoutWidget):
     def __init__(self, orbit, parent=None):
@@ -216,10 +247,10 @@ class OrbitGraphics(pg.GraphicsLayoutWidget):
                                            y=self.orbit,
                                            pen=(0, 0, 255)))
 
-    def addSignal(self, phase_th, sinus_signal):
+    def addSignal(self, phase_th, sine_signal):
         orbit_plot = self.getItem(0, 0)
         orbit_plot.addItem(pg.PlotDataItem(x=phase_th,
-                                           y=sinus_signal,
+                                           y=sine_signal,
                                            pen=(255, 0, 255)))
 
     def addLine(self, x):

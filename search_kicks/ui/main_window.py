@@ -63,7 +63,7 @@ class MainWindow(QMainWindow):
         self.activeBPMs['BPMy'] = pyml.getActiveIdx('BPMy')
 
         # FIXME: Hardcoded here, to be removed
-        phases_mat = scipy.io.loadmat('phases.mat')
+        phases_mat = scipy.io.loadmat('search_kicks/default_data/phases.mat')
         self.phases['BPMx'] = phases_mat['PhaseX'][:, 0]
         self.phases['BPMy'] = phases_mat['PhaseZ'][:, 0]
         self.tunes['BPMx'] = 17.8509864542659
@@ -79,10 +79,10 @@ class MainWindow(QMainWindow):
                                                     self.orbit['phase'],
                                                     self.orbit['tune'])
 
-            sinus_signal, phase_th = skcore.build_sinus(kick_phase,
-                                                        self.orbit['tune'],
-                                                        sin_coeff)
-            self.main_graphics_layout.addSignal(phase_th, sinus_signal*3)
+            sine_signal, phase_th = skcore.build_sine(kick_phase,
+                                                      self.orbit['tune'],
+                                                      sin_coeff)
+            self.main_graphics_layout.addSignal(phase_th, sine_signal*3)
             self.main_graphics_layout.addLine(x=kick_phase)
 
         elif self.mode == Mode.time_analysis:
@@ -96,7 +96,25 @@ class MainWindow(QMainWindow):
                                                  )
             if dialog.exec_() == QDialog.Accepted:
                 frequency = dialog.get_frequency()
-                print(frequency)
+                a_x, b_x = skcore.extract_cos_sin_withfft(
+                    BPMs['BPMx'],
+                    self.time_analysis['Fs'],
+                    frequency
+                    )
+
+                a_y, b_y = skcore.extract_cos_sin_withfft(
+                    BPMs['BPMy'],
+                    self.time_analysis['Fs'],
+                    frequency
+                    )
+                pos = self.pyml.getfamilydata('BPMx', 'Pos')[self.activeBPMs['BPMy']]
+                dialog = dialogs.ShowSinCosDialog((a_x, b_x),
+                                                  (a_y, b_y),
+                                                  pos,
+                                                  frequency
+                                                  )
+                dialog.exec_()
+
 
 
 
