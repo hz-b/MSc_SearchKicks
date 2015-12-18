@@ -22,7 +22,7 @@ app.setApplicationVersion("0.1.0")
 app.setWindowIcon(QtGui.QIcon("search_kicks/ui/bessy.gif"))
 
 pyml = PyML.PyML()
-pyml.setao(pyml.loadFromExtern('bessyIIinit.py', 'ao'))
+pyml.setao(pyml.loadFromExtern('external/bessyIIinit.py', 'ao'))
 
 main_window = ui.MainWindow(pyml)
 
