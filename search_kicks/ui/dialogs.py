@@ -169,7 +169,7 @@ class PickOrbitDialog(DialogWithButtons):
 
 
 class PickFrequencyDialog(DialogWithButtons):
-    """ Dialog composed of two plot with a value selection tool connected to a
+    """ Dialog composed of two plots with a value selection tool connected to a
         QDoubleSpinBox.
     """
     def __init__(self, BPM, fs, parent=None):
@@ -202,13 +202,20 @@ class PickFrequencyDialog(DialogWithButtons):
 
 
 class ShowSinCosDialog(QtGui.QDialog):
-
+    """ Dialog cmposed of two plots that show a sine+cosine which phase can be
+        changed.
+    """
     maxval = 100
-    def __init__(self, valuesX, valuesY, position, f, parent=None):
+    def __init__(self, valuesX, valuesY, position, phases, tunes, f,
+                 parent=None):
         QtGui.QDialog.__init__(self, parent)
 
         self.valuesX = np.array([valuesX[0], valuesX[1]])
         self.valuesY = np.array([valuesY[0], valuesY[1]])
+        self.new_valuesX = self.valuesX
+        self.new_valuesY = self.valuesY
+        self.phases = phases
+        self.tunes = tunes
 
         self.setWindowTitle("Sine / Cosine for f="+str(f)+"Hz")
         self.form_layout = QtGui.QFormLayout(self)
@@ -230,8 +237,9 @@ class ShowSinCosDialog(QtGui.QDialog):
 
     @pyqtSlot(float)
     def _on_slider_valueChanged(self, value):
-        self.slider_edit.setValue(value/float(self.maxval)*180)
-        self._update_graph_phase(value/float(self.maxval)*180)
+        v = value/float(self.maxval)*180
+        self.slider_edit.setValue(v)
+        self._update_graph_phase(v)
 
     @pyqtSlot(float)
     def _on_slider_edit_valueChanged(self, value):
@@ -239,7 +247,15 @@ class ShowSinCosDialog(QtGui.QDialog):
 
     @pyqtSlot()
     def _on_kick_btn_clicked(self):
-        raise NotImplementedError()
+        kick_phX, _ = skcore.get_kick(self.new_valuesX[0,:],
+                                      self.phases['BPMx'],
+                                      self.tunes['BPMx'])
+        kick_phY, _ = skcore.get_kick(self.new_valuesY[0,:],
+                                      self.phases['BPMy'],
+                                      self.tunes['BPMy'])
+
+        self.two_plots.add_line(kick_phX, 0)
+        self.two_plots.add_line(kick_phY, 1)
 
     def _update_graph_phase(self, angle_deg):
         valuesX = np.copy(self.valuesX)
@@ -251,4 +267,6 @@ class ShowSinCosDialog(QtGui.QDialog):
             self.valuesY[0,:], self.valuesY[1,:], angle_deg, 'deg'
             )
 
-        self.two_plots.updateValues(valuesX, valuesY)
+        self.two_plots.update_values(valuesX, valuesY)
+        self.new_valuesX = valuesX
+        self.new_valuesY = valuesY

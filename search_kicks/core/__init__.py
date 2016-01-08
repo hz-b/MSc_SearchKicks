@@ -13,6 +13,4 @@ __status__ = "Developpement"
 
 
 from .build_sine import build_sine
-from .fit_sine import fit_sine, fit_sin_cos
 from .get_kick import get_kick
-from .time_analysis import extract_cos_sin_withfft

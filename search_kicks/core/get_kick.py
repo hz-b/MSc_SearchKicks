@@ -4,7 +4,8 @@ import numpy as np
 from numpy import sin, pi
 import matplotlib.pyplot as plt
 
-from . import fit_sine, build_sine
+from search_kicks.tools.maths import fit_sine
+from search_kicks.core import build_sine
 
 
 def get_kick(orbit, phase, tune, plot=False):
@@ -24,10 +25,10 @@ def get_kick(orbit, phase, tune, plot=False):
 
         Returns
         -------
-            kick_phase : float
-                The phase where the kick was found.
-            sin_coefficients : [a, b]
-                a and b so that the sine is a*sin(b+phase)
+        kick_phase : float
+            The phase where the kick was found.
+        sin_coefficients : [a, b]
+            a and b so that the sine is a*sin(b+phase)
 
     """
     bpm_nb = orbit.size
@@ -73,9 +74,9 @@ def get_kick(orbit, phase, tune, plot=False):
         plt.axvline(kick_phase/(2*pi), -2, 2)
 
         sine_signal, phase_th = build_sine(kick_phase,
-                                             tune,
-                                             sin_coefficients
-                                             )
+                                           tune,
+                                           sin_coefficients
+                                           )
 
         plt.plot(phase_th/(2*pi), sine_signal)
 

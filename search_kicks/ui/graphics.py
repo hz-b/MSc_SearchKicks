@@ -173,12 +173,16 @@ class TwoPlotsGraphics(pg.GraphicsLayoutWidget):
         plot00.autoRange()
         plot10.autoRange()
 
-    def updateValues(self, values00, values10):
+    def update_values(self, values00, values10):
         self.values00 = values00
         self.values10 = values10
         self.removeItem(self.getItem(0, 0))
         self.removeItem(self.getItem(1, 0))
         self._plot_all()
+
+    def add_line(self, x, plot):
+        orbit_plot = self.getItem(plot, 0)
+        orbit_plot.addLine(x=x, pen=(255,0,0))
 
 
 class TwoPlotsPickGraphics(TwoPlotsGraphics):
@@ -247,12 +251,12 @@ class OrbitGraphics(pg.GraphicsLayoutWidget):
                                            y=self.orbit,
                                            pen=(0, 0, 255)))
 
-    def addSignal(self, phase_th, sine_signal):
+    def add_signal(self, phase_th, sine_signal):
         orbit_plot = self.getItem(0, 0)
         orbit_plot.addItem(pg.PlotDataItem(x=phase_th,
                                            y=sine_signal,
                                            pen=(255, 0, 255)))
 
-    def addLine(self, x):
+    def add_line(self, x):
         orbit_plot = self.getItem(0, 0)
         orbit_plot.addLine(x=x, pen=(255,0,0))

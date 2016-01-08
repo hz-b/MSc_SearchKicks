@@ -7,9 +7,10 @@ import sys
 import os
 
 __my_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(__my_dir+"/..")
+sys.path.append(__my_dir+"/../..")
 
-import core as skcore
+import search_kicks.core as skcore
+import search_kicks.tools as sktools
 
 
 def test_fit_sine(signal, phase):
@@ -17,17 +18,17 @@ def test_fit_sine(signal, phase):
     print("Start test for fit_sine()")
     print("==========================")
 
-    offset, amplitude, phase_shift = skcore.fit_sine(signal,
-                                                      phase,
-                                                      'sum',
-                                                      True,
-                                                      True)
+    offset, amplitude, phase_shift = sktools.maths.fit_sine(signal,
+                                                            phase,
+                                                            'sum',
+                                                            True,
+                                                            True)
 
-    offset2, amplitude2, phase_shift2 = skcore.fit_sine(signal,
-                                                         phase,
-                                                         'inv',
-                                                         True,
-                                                         True)
+    offset2, amplitude2, phase_shift2 = sktools.maths.fit_sine(signal,
+                                                               phase,
+                                                               'inv',
+                                                               True,
+                                                               True)
     print("'sum'\n"
           "\toffset = {}\n"
           "\tamplitude = {}\n"
@@ -48,17 +49,17 @@ def test_fit_sin_cos(signal, phase):
     print("Start test for fit_sin_cos()")
     print("==========================")
 
-    offset, amplitude_s, amplitude_c = skcore.fit_sin_cos(signal,
-                                                        phase,
-                                                        'sum',
-                                                        True,
-                                                        True)
+    offset, amplitude_s, amplitude_c = sktools.maths.fit_sin_cos(signal,
+                                                                 phase,
+                                                                 'sum',
+                                                                 True,
+                                                                 True)
 
-    offset2, amplitude_s2, amplitude_c2 = skcore.fit_sin_cos(signal,
-                                                           phase,
-                                                           'inv',
-                                                           True,
-                                                           True)
+    offset2, amplitude_s2, amplitude_c2 = sktools.maths.fit_sin_cos(signal,
+                                                                    phase,
+                                                                    'inv',
+                                                                    True,
+                                                                    True)
     print("'sum'\n"
           "\toffset = {}\n"
           "\tamplitude sine = {}\n"

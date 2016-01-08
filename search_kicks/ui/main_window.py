@@ -56,7 +56,7 @@ class MainWindow(QMainWindow):
             )
         self.action_orbit_save.setEnabled(False)
         self.action_timeanalys_save.setEnabled(False)
-
+        self.execute_btn.setEnabled(False)
         self.pyml = pyml
 
         self.activeBPMs['BPMx'] = pyml.getActiveIdx('BPMx')
@@ -82,8 +82,8 @@ class MainWindow(QMainWindow):
             sine_signal, phase_th = skcore.build_sine(kick_phase,
                                                       self.orbit['tune'],
                                                       sin_coeff)
-            self.main_graphics_layout.addSignal(phase_th, sine_signal*3)
-            self.main_graphics_layout.addLine(x=kick_phase)
+            self.main_graphics_layout.add_signal(phase_th, sine_signal*3)
+            self.main_graphics_layout.add_line(x=kick_phase)
 
         elif self.mode == Mode.time_analysis:
             start, end = self.main_graphics_layout.get_region()
@@ -96,13 +96,13 @@ class MainWindow(QMainWindow):
                                                  )
             if dialog.exec_() == QDialog.Accepted:
                 frequency = dialog.get_frequency()
-                a_x, b_x = skcore.extract_cos_sin_withfft(
+                a_x, b_x = sktools.maths.extract_cos_sin_withfft(
                     BPMs['BPMx'],
                     self.time_analysis['Fs'],
                     frequency
                     )
 
-                a_y, b_y = skcore.extract_cos_sin_withfft(
+                a_y, b_y = sktools.maths.extract_cos_sin_withfft(
                     BPMs['BPMy'],
                     self.time_analysis['Fs'],
                     frequency
@@ -111,11 +111,11 @@ class MainWindow(QMainWindow):
                 dialog = dialogs.ShowSinCosDialog((a_x, b_x),
                                                   (a_y, b_y),
                                                   pos,
+                                                  self.phases,
+                                                  self.tunes,
                                                   frequency
                                                   )
                 dialog.exec_()
-
-
 
 
     @pyqtSlot(bool)
@@ -253,6 +253,8 @@ class MainWindow(QMainWindow):
     def __set_mode(self, work_type, source, family=''):
         self.mode = work_type
         if work_type == Mode.time_analysis:
+            self.execute_btn.setText("Start time analysis")
+            self.execute_btn.setEnabled(True)
             self.action_orbit_save.setEnabled(False)
             self.action_timeanalys_save.setEnabled(True)
             if source == Mode.from_file:
@@ -260,6 +262,8 @@ class MainWindow(QMainWindow):
             elif source == Mode.online:
                 self.current_mode_label.setText("Time analysis from FOFB")
         elif work_type == Mode.orbit:
+            self.execute_btn.setText("Get kick")
+            self.execute_btn.setEnabled(True)
             self.action_orbit_save.setEnabled(True)
             self.action_timeanalys_save.setEnabled(False)
             if source == Mode.from_file:
