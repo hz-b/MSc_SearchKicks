@@ -13,72 +13,14 @@ import PyML
 import matplotlib.pyplot as plt
 
 
-def function_sin_cos(ref_freq, values, fs, ph):
-    A = []
-    B = []
-    t = np.arange(values[1,:].size)/fs
-
-    phase_sin = t*ref_freq
-    for k in active_bpms:
-        _, A_t, B_t = sktools.maths.fit_sin_cos(values[k, :],
-                                                phase_sin,
-                                                'sum',
-                                                False)
-        A.append(A_t)
-        B.append(B_t)
-
-    plt.figure("sin/cos")
-    plt.plot(ph,A)
-    plt.plot(ph,B)
-
-    return A,B
-
-
-def do_svd(A,B,Smat,title):
-    U, s, V = np.linalg.svd(Smat, full_matrices=False)
-    # S_mat = U * diag(s) * V
-    idmax = 20
-    Sred = np.diag(np.ones(idmax)/s[:idmax])
-    Ured = U[:,:idmax]
-    Vred = V[:idmax,:]
-
-    S_inv = np.dot(Vred.conj().T, np.dot(Sred, Ured.conj().T))
-    r1 = np.dot(S_inv, A)
-    r2 = np.dot(S_inv, B)
-
-
-    plt.figure('CMs with '+title)
-    plt.plot(abs(r1))
-    plt.plot(abs(r2))
-    plt.legend(['sin', 'cos'])
-
-
-def do_get_kick(A, B, phase, tune, pos, title):
-
-    kicka1, coeffa1 = skcore.get_kick(np.array(A), phase, tune, False)
-    kicka2, coeffa2 = skcore.get_kick(np.array(B), phase, tune, False)
-
-    kik1 = np.argmin(abs(phase-kicka1))
-    kik2 = np.argmin(abs(phase-kicka2))
-
-    plt.figure('Orbits + kick with '+title)
-    plt.subplot(2, 1, 1)
-    plt.plot(pos, A, '-g')
-    plt.axvline(pos[kik1], -2, 2)
-    plt.title('sine')
-
-    plt.subplot(2, 1, 2)
-    plt.plot(pos, B, '-g')
-    plt.axvline(pos[kik2], -2, 2)
-    plt.title('cosine')
-
-    return kik1, kik2
-
 DEFAULT_DATA = '../search_kicks/default_data/'
 PHASE_FILE = DEFAULT_DATA + 'phases.mat'
 SMAT_FILE = DEFAULT_DATA + 'Smat-CM-Standard_HMI.mat'
-#DATA_FILE = '../../_data/translated_FastBPMData_2015-10-26_06-57-56_vert10Hz.mat'
-DATA_FILE = '../../_data/translated_FastBPMData_2015-10-26_06-54-42_horz10Hz.mat'
+DATA_FILE = '../../_data/translated_FastBPMData_2015-10-26_06-57-56_vert10Hz.mat'
+#DATA_FILE = '../../_data/translated_FastBPMData_2015-10-26_06-54-42_horz10Hz.mat'
+#DATA_FILE = '../../_data/translated_FastBPMData_2015-10-26_06-39-01-ohne_10Hz.mat'
+#AXIS = 'x'
+AXIS = 'y'
 
 # Hardcoded constants
 tuneX = 17.8509864542659
@@ -109,51 +51,113 @@ if __name__=='__main__':
     phaseX = phases_mat['PhaseX'][:, 0]
     phaseY = phases_mat['PhaseZ'][:, 0]
 
-
-#    pos = sy[active_bpms]
-#    Smat = Smat_yy
-#    phase = phaseY
-#    tune = tuneY
-#    values = valuesY
-#    names = namesY
-
-    pos = sx[active_bpms]
-    Smat = Smat_xx
-    phase = phaseX
-    tune = tuneX
-    values = valuesX
-    names = namesX
-
+    if AXIS == 'y':
+        pos = sy[active_bpms]
+        Smat = Smat_yy
+        phase = phaseY
+        tune = tuneY
+        values = valuesY[active_bpms, :]
+        names = namesY[active_bpms]
+    elif AXIS == 'x':
+        pos = sx[active_bpms]
+        Smat = Smat_xx
+        phase = phaseX
+        tune = tuneX
+        values = valuesX[active_bpms, :]
+        names = namesX[active_bpms]
 
     sp_nb = values.shape[1]
 
-    #A, B = function_sin_cos(ref_freq, values, fs, pos)
-    b1, b2 = sktools.maths.extract_cos_sin_withfft(values[active_bpms,:],
-                                                   fs,
-                                                   ref_freq)
+    # Extract sin cos
+    A, B = sktools.maths.extract_sin_cos(values, fs, ref_freq, 'sum')
+    b1, b2 = sktools.maths.extract_sin_cos(values, fs, ref_freq, 'fft')
+
+    plt.figure("sin/cos")
+    plt.subplot(2,1,1)
+    plt.plot(pos, A)
+    plt.plot(pos, B)
+    plt.legend(['sin','cos'])
+    plt.title('With sums of cos/sin')
+
+    plt.subplot(2,1,2)
+    plt.plot(pos, b1)
+    plt.plot(pos, b2)
+    plt.legend(['sin','cos'])
+    plt.title('With fft')
+
+    # Optimize
     step_size = 0.1
-
     b1_opt, b2_opt, _ = sktools.maths.optimize_rotation(b1, b2, step_size)
+    a = [b1,b2]
+    klt = sktools.maths.klt(a)
 
-    plt.figure("sin/cos fft")
+    plt.figure("optimisaton")
+    plt.subplot(2,1,1)
+    plt.title("Rotation")
     plt.plot(pos, b1_opt)
     plt.plot(pos, b2_opt)
-
-    do_svd(b1,b2, Smat, 'fft')
-    #do_svd(A,B, Smat, 'sin_cos')
-
-    kik1, kik2 = do_get_kick(b1_opt, b2_opt, phase, tune, pos, 'fft')
-    #kik1b, kik2b =do_get_kick(A, B, phase, tune, pos, 'sin_cos')
-
-    print(names[active_bpms][kik1], names[active_bpms][kik2])
-    #print(names[active_bpms][kik1b], names[active_bpms][kik2b])
-
-
-#### TEST KLT ####
-    a = np.array([b1, b2])
-    val,vec = np.linalg.eig(np.cov(a))
-    klt = np.dot(vec,a)
-
-    plt.figure("sin/cos klt")
-    plt.plot(pos, klt[1])
+    plt.subplot(2,1,2)
+    plt.title("KLT")
     plt.plot(pos, klt[0])
+    plt.plot(pos, klt[1])
+
+    # Correction fft
+    S_inv = sktools.maths.inverse_with_svd(Smat_xx, 10)
+
+    r1 = np.dot(S_inv, b1_opt)
+    r2 = np.dot(S_inv, b2_opt)
+
+    plt.figure('CMs, fft')
+    plt.plot(r1)
+    plt.plot(r2)
+    plt.title('Correctors, fft')
+
+    # Kick fft
+    kicka1, coeffa1 = skcore.get_kick(np.array(b1_opt), phase, tune, False)
+    kicka2, coeffa2 = skcore.get_kick(np.array(b2_opt), phase, tune, False)
+
+    kik1 = np.argmin(abs(phase-kicka1))
+    kik2 = np.argmin(abs(phase-kicka2))
+
+    plt.figure('Orbits + kick, fft')
+    plt.subplot(2, 1, 1)
+    plt.plot(pos, b1_opt, '-g')
+    plt.axvline(pos[kik1], -2, 2)
+    plt.title('sine')
+
+    plt.subplot(2, 1, 2)
+    plt.plot(pos, b2_opt, '-g')
+    plt.axvline(pos[kik2], -2, 2)
+    plt.title('cosine')
+
+    # Correction sum
+    a = [A,B]
+    [A_opt, B_opt] = sktools.maths.klt(a)
+    S_inv = sktools.maths.inverse_with_svd(Smat_xx, 10)
+
+    cor1 = np.dot(S_inv, A_opt)
+    cor2 = np.dot(S_inv, B_opt)
+
+    plt.figure('CMs, sum')
+    plt.plot(cor1)
+    plt.plot(cor2)
+    plt.title('Correctors, sum')
+
+    # Kick sum
+    kickA, coeffa1 = skcore.get_kick(np.array(A_opt), phase, tune, False)
+    kickB, coeffa2 = skcore.get_kick(np.array(B_opt), phase, tune, False)
+
+    kik1 = np.argmin(abs(phase-kickA))
+    kik2 = np.argmin(abs(phase-kickB))
+
+    plt.figure('Orbits + kick, sum')
+    plt.subplot(2, 1, 1)
+    plt.plot(pos, A_opt, '-g')
+    plt.axvline(pos[kik1], -2, 2)
+    plt.title('sine')
+
+    plt.subplot(2, 1, 2)
+    plt.plot(pos, B_opt, '-g')
+    plt.axvline(pos[kik2], -2, 2)
+    plt.title('cosine')
+    print(names[kik1], names[kik2])

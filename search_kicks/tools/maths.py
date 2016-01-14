@@ -108,7 +108,7 @@ def fit_sin_cos(signal, phase, method, offset_opt=True, plot=False):
             Signal to be approximated.
         phase : np.array
             Argument of the sine. in `a + b*sin(c+d*t)` it would be `d*t`
-        method: string
+        method : string
             Which method to use: 'inv' or 'sum'
         offset_opt : bool, optional.
             If False, the fit function is `b*sin(c + phase)`, else it is
@@ -169,6 +169,38 @@ def fit_sin_cos(signal, phase, method, offset_opt=True, plot=False):
     return offset, amp_sin, amp_cos
 
 
+def extract_sin_cos(values, fs, f, method):
+    """ Approximate the time signals by a funtion of type:
+        `f(t) = a*sin(f*t) + b*cos(f*t)`.
+
+        Parameters
+        ----------
+        values : np.array (nb_bpm x nb_time_samples)
+            Each line is the signal of a given BPM.
+        fs : float
+            Sampling frequency.
+        f : float
+            Frequency to extract.
+        method : string
+            Which method to use: 'sum' or 'fft'
+
+        Returns
+        -------
+        amp_sin : list
+            Sinus amplitude for each BPM (list of all `a`, nb_bpm elements).
+        am_cos : list
+            Sinus amplitude for each BPM (list of all `b`, nb_bpm elements).
+
+    """
+
+    if method == "fft":
+        return _extract_cos_sin_withfft(values, fs, f)
+    elif method == "sum":
+        return _extract_cos_sin_withsum(values, fs, f)
+    else:
+        raise ValueError("Argument 4 must be 'fft' or 'sum'")
+
+
 def _fit_with_sum(signal, phase, offset_opt):
 
     N = signal.size
@@ -207,41 +239,92 @@ def _fit_with_inversion(signal, phase, offset_opt):
     return offset, amp_sin, amp_cos
 
 
-def extract_cos_sin_withfft(values, fs, f):
-    """ Approximate the time signals by a funtion of type:
-        `f(t) = a*sin(f*t) + b*cos(f*t)`.
+def _extract_cos_sin_withsum(values, fs, f):
+    amp_sin = []
+    amp_cos = []
+    t = np.arange(values[1,:].size)/fs
 
-        Parameters
-        ----------
-        values : np.array (nb_bpm x nb_time_samples)
-            Each line is the signal of a given BPM.
-        fs : float
-            Sampling frequency.
-        f : float
-            Frequency to extract.
+    phase_sin = 2*np.pi*t*f
+    for k in range(values.shape[0]):
+        _, A_t, B_t = fit_sin_cos(values[k, :],
+                                  phase_sin,
+                                  'sum',
+                                  False)
+        amp_sin.append(A_t)
+        amp_cos.append(B_t)
 
-        Returns
-        -------
-        amp_sin : list
-            Sinus amplitude for each BPM (list of all `a`, nb_bpm elements).
-        am_cos : list
-            Sinus amplitude for each BPM (list of all `b`, nb_bpm elements).
+    return np.array(amp_sin), np.array(amp_cos)
 
-    """
 
+def _extract_cos_sin_withfft(values, fs, f):
     sample_nb = values.shape[1]
-    bpm_nb = values.shape[0]
-    t = np.divide(np.arange(sample_nb), fs*np.ones(sample_nb))
-    frequencies = np.fft.fftfreq(t.shape[-1], 1/fs)
+    t = np.arange(sample_nb)/fs
+
+    frequencies = np.fft.fftfreq(t.shape[-1], 1/float(fs))
 
     freq_idx = np.argmin(np.abs(frequencies - f))
 
     amp_sin = []
     amp_cos = []
 
-    for k in range(bpm_nb):
-        fftxk = np.fft.fft(values[k, :])[freq_idx]
-        amp_cos.append(fftxk.real)
-        amp_sin.append(fftxk.imag)
+    fftx = 2*np.fft.fft(values, axis=1)/sample_nb
+    amp_cos = fftx[:, freq_idx].real
+    amp_sin = fftx[:, freq_idx].imag
 
     return np.array(amp_sin), np.array(amp_cos)
+
+
+def klt(inputs):
+    """ Apply the KLT to the input
+
+        Parameters
+        ----------
+        input : np.array (signal_length x nb of dimensions)
+            Each column represents a dimension of the signal.
+
+        Returns
+        -------
+        output : np.array (signal_length x nb of dimensions)
+            Each column represents a dimension of the signal.
+
+    """
+
+    covar = np.cov(inputs)
+    val,vec = np.linalg.eig(covar)
+
+    # Sort the eigenvectors with decreasing eigenvalues
+    idx = val.argsort()[::-1]
+    val = val[idx]
+    vec = vec[:, idx]
+    output = np.dot(vec.T, inputs)
+
+    return output
+
+def inverse_with_svd(M, nb_values):
+    """ Compute the SVD and return the pseudo inverse of M with `nb_values`
+        eigenvalues.
+
+        Parameters
+        ----------
+        M : np.array (m x n)
+            Matrix to compute
+        nb_values : integer
+            Number of eigenvalue to keep in the computation
+
+        Returns
+        -------
+        M_inv : np.array (n x m)
+            Pseudo inverse of M
+
+    """
+
+    U, s, V = np.linalg.svd(M, full_matrices=False)
+    # S_mat = U * diag(s) * V
+    idmax = nb_values
+    Sred = np.diag(np.ones(idmax)/s[:idmax])
+    Ured = U[:,:idmax]
+    Vred = V[:idmax,:]
+
+    M_inv = np.dot(Vred.conj().T, np.dot(Sred, Ured.conj().T))
+
+    return M_inv
