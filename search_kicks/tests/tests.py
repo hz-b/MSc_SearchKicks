@@ -96,7 +96,7 @@ def test_get_kick():
         idx = np.argmin(abs(phase_full-phase[i]))
         orbit[i] = orbit_full[idx]
 
-    orbit += 0.5*noise
+    orbit += 0.1*noise
 
     kick_found, _ = skcore.get_kick(orbit, phase, tune, True)
     print("kick set at {}".format(kick/(2*np.pi)))

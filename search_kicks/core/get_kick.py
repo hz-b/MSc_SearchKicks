@@ -55,17 +55,23 @@ def get_kick(orbit, phase, tune, plot=False):
             best_rms = rms
 
             sin_coefficients = [b, c]
-            # find the phase between the BPM i and i+1 where
+            # we want to find the phase between the BPM i and i+1 where
             # sin(phase) = sin(phase - 2pi*tune).
             # It's easier to look in the first part of the phase_exp and then
             # add 2*pi*tune
-            phase_previous = phase_exp[i]
-            phase_next = phase_exp[i+1]
-            interval = np.linspace(phase_previous, phase_next, 1000)
-            idx_min = np.argmin(
-                abs(b*sin(interval + c) - b*sin(interval+c+2*pi*tune))
-                )
-            kick_phase = interval[idx_min]
+            if i == 0:
+                phase_previous = phase_exp[bpm_nb-1]
+                phase_next = phase_exp[bpm_nb+1]
+            else:
+                phase_previous = phase_exp[i]
+                phase_next = phase_exp[i+1]
+
+        interval = np.linspace(phase_previous, phase_next, 1000)
+        b, c = sin_coefficients
+        idx_min = np.argmin(
+            abs(b*sin(interval + c) - b*sin(interval+c+2*pi*tune))
+            )
+        kick_phase = interval[idx_min] % phase_exp[bpm_nb]
 
     if plot:
         plt.figure()
