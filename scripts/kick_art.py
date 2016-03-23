@@ -3,8 +3,8 @@
 
 import os, sys
 __my_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(__my_dir+"/PyML")
-sys.path.append(__my_dir+"/search_kicks")
+sys.path.append(__my_dir+"/..")
+sys.path.append(__my_dir+"/../../PyML")
 
 import scipy.io
 import numpy as np
@@ -13,7 +13,7 @@ import search_kicks.tools as sktools
 import PyML
 import matplotlib.pyplot as plt
 
-DEFAULT_DATA = 'search_kicks/search_kicks/default_data/'
+DEFAULT_DATA = '../search_kicks/default_data/'
 PHASE_FILE = DEFAULT_DATA + 'phases.mat'
 SMAT_FILE = DEFAULT_DATA + 'Smat-CM-Standard_HMI.mat'
 #DATA_FILE = '../../_data/translated_FastBPMData_2015-10-26_06-57-56_vert10Hz.mat'
@@ -34,7 +34,7 @@ if __name__=='__main__':
 
     plt.close('all')
     pml = PyML.PyML()
-    pml.setao(pml.loadFromExtern('search_kicks/external/bessyIIinit.py', 'ao'))
+    pml.setao(pml.loadFromExtern('../external/bessyIIinit.py', 'ao'))
 
     active_bpmsx = pml.getActiveIdx('BPMx')
     active_bpmsy = pml.getActiveIdx('BPMy')
@@ -91,9 +91,9 @@ if __name__=='__main__':
     plt.plot(pos, values, '-g')
     plt.axvline(pos[kik1], -2, 2)
 
-    if names[kik1] == names[cidx]:
+    if pos[kik1] == pos_cor[cidx]:
         text = names[kik1] + ' Good job!'
     else:
-        text = names[kik1] + ' found instead of ' + names[cidx] 
+        text = '{} found, d={}'.format(names[kik1],abs(pos_cor[cidx]-pos[kik1]))
     print(text)
     plt.show()
