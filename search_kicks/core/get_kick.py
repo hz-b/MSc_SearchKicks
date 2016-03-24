@@ -38,6 +38,8 @@ def get_kick(orbit, phase, tune, plot=False):
     signal_exp = np.concatenate((orbit, orbit))
     phase_exp = np.concatenate((phase, phase + tune*2*pi))
 
+    ttt = []
+    aaa = []
     # shift the sine between each BPM and its duplicate and find the best
     # match
     for i in range(bpm_nb):
@@ -53,7 +55,7 @@ def get_kick(orbit, phase, tune, plot=False):
         rms = sum(pow(y-signal_t, 2))
         if rms < best_rms or i == 0:
             best_rms = rms
-
+            i_best = i
             sin_coefficients = [b, c]
             # we want to find the phase between the BPM i and i+1 where
             # sin(phase) = sin(phase - 2pi*tune).
@@ -66,13 +68,20 @@ def get_kick(orbit, phase, tune, plot=False):
                 phase_previous = phase_exp[i]
                 phase_next = phase_exp[i+1]
 
-        interval = np.linspace(phase_previous, phase_next, 1000)
-        b, c = sin_coefficients
-        idx_min = np.argmin(
-            abs(b*sin(interval + c) - b*sin(interval+c+2*pi*tune))
-            )
-        kick_phase = interval[idx_min] % phase_exp[bpm_nb]
+#        interval = np.linspace(phase_previous, phase_next, 1000)
 
+            interval = np.linspace(phase_previous, phase_next, 100000)
+            b, c = sin_coefficients
+            idx_min = np.argmin(
+                abs(b*sin(interval + c) - b*sin(interval+c+2*pi*tune))
+                )
+            val = abs(b*sin(interval[idx_min] + c) - b*sin(interval[idx_min]+c+2*pi*tune))
+            print(val)
+            kick_phase = interval[idx_min] % phase_exp[bpm_nb]
+            ttt.append(val**2)
+            aaa.append(kick_phase)
+
+    kick_phase = aaa[np.argmin(np.array(ttt))]
     if plot:
         plt.figure()
         plt.plot(phase/(2*pi), orbit, '+')

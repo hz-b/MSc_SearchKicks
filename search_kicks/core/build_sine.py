@@ -31,7 +31,7 @@ def build_sine(kick_phase, tune, sin_coefficients):
     c = sin_coefficients[1]
 
     sine_tmp = np.concatenate((b*np.sin(phase_tmp + c),
-                                -b*np.sin(phase_tmp + c)))
+                               b*np.sin(phase_tmp + c)))
 
     phase_exp = np.concatenate((phase_tmp-2*np.pi*tune,
                                 phase_tmp))

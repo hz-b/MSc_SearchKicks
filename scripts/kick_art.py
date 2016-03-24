@@ -34,7 +34,7 @@ if __name__=='__main__':
 
     plt.close('all')
     pml = PyML.PyML()
-    pml.setao(pml.loadFromExtern('../external/bessyIIinit.py', 'ao'))
+    pml.setao(pml.loadFromExtern('../../PyML/bessyIIinit.py', 'ao'))
 
     active_bpmsx = pml.getActiveIdx('BPMx')
     active_bpmsy = pml.getActiveIdx('BPMy')
@@ -83,7 +83,7 @@ if __name__=='__main__':
     plt.title('Correctors')
 
     # Kick
-    kicka1, coeffa1 = skcore.get_kick(np.array(values), phase, tune, False)
+    kicka1, coeffa1 = skcore.get_kick(np.array(values), phase, tune, True)
 
     kik1 = np.argmin(abs(phase-kicka1))
 
