@@ -84,7 +84,7 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
         interval = interval_rel+phase_exp[i_best]
         b, c = sin_coefficients
 
-        plt.figure('Error curves')
+        plt.figure('skcore::get_kick -- Error curves')
         plt.subplot(2,1,1)
         plt.title('1- Sine Fit')
         plt.plot(range(-len(rms_tab)//2, len(rms_tab)//2),rms_tab)
@@ -122,7 +122,7 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
 
 
     if plot:
-        plt.figure()
+        plt.figure('skcore::get_kick -- Orbit plot')
         plt.plot(phase/(2*pi), orbit, '+')
         sine_signal, phase_th = build_sine(kick_phase,
                                            tune,
