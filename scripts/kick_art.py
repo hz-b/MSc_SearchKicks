@@ -35,144 +35,7 @@ from search_kicks.tools.maths import fit_sine
 from search_kicks.core import build_sine
 
 
-def get_kick(orbit, phase, tune, plot=False):
-    """ Find the kick in the orbit.
-
-        Parameters
-        ----------
-        orbit : np.array
-            Orbit.
-        phase : np.array
-            Phase.
-        tune : float
-            The orbit tune.
-        plot : bool, optional.
-            If True, plot the orbit with the kick position, else don't.
-            Default to False.
-
-        Returns
-        -------
-        kick_phase : float
-            The phase where the kick was found.
-        sin_coefficients : [a, b]
-            a and b so that the sine is a*sin(b+phase)
-
-    """
-    bpm_nb = orbit.size
-    best_rms = 0
-
-    # duplicate the signal to find the sine between the kick and its duplicate
-    signal_exp = np.concatenate((orbit, orbit))
-    phase_exp = np.concatenate((phase, phase + tune*2*pi))
-
-    idx = []
-    rms = []
-    cont = []
-
-    kick_tab = []
-    # shift the sine between each BPM and its duplicate and find the best
-    # match
-    for i in range(bpm_nb):
-
-        signal_t = signal_exp[i:i+bpm_nb+1]
-        phase_t = phase_exp[i:i+bpm_nb+1]
-
-        _, b, c = fit_sine(signal_t, phase_t, 'inv', False)
-        sin_coefficients = [b, c]
-
-        if i == 0:
-            phase_previous = phase_exp[bpm_nb-1]
-            phase_next = phase_exp[bpm_nb+1]
-        else:
-            phase_previous = phase_exp[i-1]
-            phase_next = phase_exp[i+1]
-        interval = np.linspace(phase_previous, phase_next, 100000)
-
-        # Continuity condition
-        if np.min(abs(b*sin(interval+c) - b*sin(interval+c+2*pi*tune))) > 1e-4:
-            continue
-        idx_min = np.argmin(
-            abs(b*sin(interval + c) - b*sin(interval+c+2*pi*tune))
-            )
-        kick_phase = interval[idx_min] % phase_exp[bpm_nb]
-        kick_tab.append(kick_phase)
-        # function
-        sine_signal, phase_th = build_sine(kick_phase,
-                                           tune,
-                                           [b, c],
-                                           phase_t
-                                           )
-        sine_signal2, _ = build_sine(kick_phase,
-                                           tune,
-                                           [b, c],
-                                           )
-
-        # calculate the RMS. the best fit means that the kick is between
-        # the BPMs idx and idx+1
-        rms.append(sum(pow(sine_signal-signal_t, 2)))
-        #print(rms)
-        print(i)
-        idx.append(i)
-        cont.append(np.min(abs(b*sin(interval + c) - b*sin(interval+c+2*pi*tune))))
-        print(cont[-1])
-        print('rms {}'.format(idx[np.argmin(rms)]))
-        plt.figure()
-        plt.plot(np.arange(sine_signal2.size)/float(sine_signal2.size)*107, sine_signal2)
-        plt.plot(orbit)
-
-
-    kick_phase = kick_tab[np.argmin(rms)]
-    if plot:
-        plt.figure()
-        plt.plot(phase/(2*pi), orbit, '+')
-        plt.xlabel(r'phase / $2 \pi$')
-        plt.axvline(kick_phase/(2*pi), -2, 2)
-
-        sine_signal, phase_th = build_sine(kick_phase,
-                                           tune,
-                                           sin_coefficients
-                                           )
-
-        plt.plot(phase_th/(2*pi), sine_signal)
-
-
-
-        plt.figure()
-        plt.subplot(3,1,1)
-        plt.plot(np.arange(sine_signal.size)/float(sine_signal.size)*107, sine_signal)
-        plt.plot(orbit)
-        for idx1 in idx:
-            plt.axvline(idx1, -2, 2)
-
-        plt.subplot(3,1,2)
-        plt.plot(idx,rms)
-        plt.subplot(3,1,3)
-        plt.plot(idx,cont)
-    return kick_phase, sin_coefficients
-
-
 if __name__=='__main__':
-    plt.close('all')
-
-    tune = tuneY
-    kick_phase = 2*np.pi*3.18
-    phase_tmp = np.linspace(0, tune*2*np.pi, 5000)
-    phase_tmp = phase_tmp[:-1]
-    sine_tmp = np.concatenate((np.sin(phase_tmp + kick_phase),
-                               -np.sin(phase_tmp + kick_phase)))
-
-    phase_exp = np.concatenate((phase_tmp-2*np.pi*tune,
-                                phase_tmp))+kick_phase
-
-    valid_ids = np.logical_and(phase_exp >= 0, phase_exp <= tune*2*np.pi)
-
-    phase_th = phase_exp[valid_ids]
-    sine_signal = sine_tmp[valid_ids]
-    plt.figure()
-    plt.plot(phase_th,sine_signal)
-
-
-if __name__=='d':
     if len(sys.argv) == 1:
         cidx = 30
     else:
@@ -229,7 +92,7 @@ if __name__=='d':
     plt.title('Correctors')
 
     # Kick
-    kicka1, coeffa1 = get_kick(np.array(values), phase, tune, True)
+    kicka1, coeffa1 = skcore.get_kick(np.array(values), phase, tune, True)
 
     kik1 = np.argmin(abs(phase-kicka1))
 
