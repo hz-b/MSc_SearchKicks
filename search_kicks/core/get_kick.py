@@ -38,8 +38,6 @@ def get_kick(orbit, phase, tune, plot=False):
     signal_exp = np.concatenate((orbit, orbit))
     phase_exp = np.concatenate((phase, phase + tune*2*pi))
 
-    ttt = []
-    aaa = []
     # shift the sine between each BPM and its duplicate and find the best
     # match
     for i in range(bpm_nb):
@@ -55,26 +53,38 @@ def get_kick(orbit, phase, tune, plot=False):
         rms = sum(pow(y-signal_t, 2))
         if rms < best_rms or i == 0:
             best_rms = rms
-            i_best = i
             sin_coefficients = [b, c]
+            if i == 0:
+                i_best = bpm_nb
+            else:
+                i_best = i
 
-    # we want to find the phase between the BPM i and i+1 where
-    # sin(phase) = sin(phase - 2pi*tune).
-    # It's easier to look in the first part of the phase_exp and then
-    # add 2*pi*tune
-    if i_best == 0:
-        phase_previous = phase_exp[bpm_nb]-pi/2.0
-        phase_next = phase_exp[bpm_nb]+pi/2.0
-    else:
-        phase_previous = phase_exp[i_best]-pi/2.0
-        phase_next = phase_exp[i_best]+pi/2.0
+    # Search in the next 1/4 period and in the previous one
+    phase_previous = phase_exp[i_best]-pi/2.0
+    phase_next = phase_exp[i_best]+pi/2.0
 
-#        interval = np.linspace(phase_previous, phase_next, 1000)
-    interval = np.linspace(phase_previous, phase_next, 100000)
+    n_lspace = 10000
+
+
+    interval1 = np.linspace(phase_exp[i_best], phase_next, n_lspace)
+    interval2 = np.linspace(phase_previous, phase_exp[i_best], n_lspace)
     b, c = sin_coefficients
-    idx_min = np.argmin(
-        abs(b*sin(interval + c) - b*sin(interval+c+2*pi*tune))
+    idx_min1 = np.argmin(
+        abs(b*sin(interval1 + c) - b*sin(interval1+c+2*pi*tune))
         )
+    idx_min2 = np.argmin(
+        abs(b*sin(interval2 + c) - b*sin(interval2+c+2*pi*tune))
+        )
+
+    # Take the nearest, as the kick should be around the bpm found before
+    if n_lspace - idx_min1 > idx_min2:
+        idx_min = idx_min2
+        interval = interval2
+    else:
+        idx_min = idx_min1
+        interval = interval1
+
+    # Here is the kick
     kick_phase = interval[idx_min] % phase_exp[bpm_nb]
 
     if plot:
