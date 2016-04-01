@@ -8,7 +8,7 @@ from search_kicks.tools.maths import fit_sine
 from search_kicks.core import build_sine
 
 
-def get_kick(orbit, phase, tune, plot=False):
+def get_kick(orbit, phase, tune, plot=False, error_curves=False):
     """ Find the kick in the orbit.
 
         Parameters
@@ -32,6 +32,7 @@ def get_kick(orbit, phase, tune, plot=False):
 
     """
     bpm_nb = orbit.size
+    rms_tab = []
     best_rms = 0
 
     # duplicate the signal to find the sine between the kick and its duplicate
@@ -51,6 +52,7 @@ def get_kick(orbit, phase, tune, plot=False):
         # calculate the RMS. the best fit means that the kick is between
         # the BPMs idx and idx+1
         rms = sum(pow(y-signal_t, 2))
+        rms_tab.append(rms)
         if rms < best_rms or i == 0:
             best_rms = rms
             sin_coefficients = [b, c]
@@ -59,45 +61,75 @@ def get_kick(orbit, phase, tune, plot=False):
             else:
                 i_best = i
 
-    # Search in the next 1/4 period and in the previous one
+    # Search between the previous and the next 1/4 period
     phase_previous = phase_exp[i_best]-pi/2.0
     phase_next = phase_exp[i_best]+pi/2.0
 
     n_lspace = 10000
 
-
-    interval1 = np.linspace(phase_exp[i_best], phase_next, n_lspace)
-    interval2 = np.linspace(phase_previous, phase_exp[i_best], n_lspace)
+    interval = np.linspace(phase_previous, phase_next, n_lspace)
     b, c = sin_coefficients
-    idx_min1 = np.argmin(
-        abs(b*sin(interval1 + c) - b*sin(interval1+c+2*pi*tune))
+    idx_min = np.argmin(
+        abs(b*sin(interval + c) - b*sin(interval + c+2*pi*tune))
         )
-    idx_min2 = np.argmin(
-        abs(b*sin(interval2 + c) - b*sin(interval2+c+2*pi*tune))
-        )
-
-    # Take the nearest, as the kick should be around the bpm found before
-    if n_lspace - idx_min1 > idx_min2:
-        idx_min = idx_min2
-        interval = interval2
-    else:
-        idx_min = idx_min1
-        interval = interval1
 
     # Here is the kick
     kick_phase = interval[idx_min] % phase_exp[bpm_nb]
 
+    if error_curves:
+        transl = bpm_nb//2 - i_best
+        rms_tab = np.roll(rms_tab,transl)
+        offset = 2*pi
+        interval_rel = np.linspace(-offset, +offset, n_lspace)
+        interval = interval_rel+phase_exp[i_best]
+        b, c = sin_coefficients
+
+        plt.figure('Error curves')
+        plt.subplot(2,1,1)
+        plt.title('1- Sine Fit')
+        plt.plot(range(-len(rms_tab)//2, len(rms_tab)//2),rms_tab)
+        plt.ylabel('RMS')
+        plt.xlabel('Distance from chosen one (in indexes)')
+        plt.grid()
+
+        plt.subplot(2,1,2)
+        plt.title('2- Find kick')
+        plt.plot(
+            interval_rel, abs(b*sin(interval + c) - b*sin(interval+c+2*pi*tune))
+            )
+        tick_vals = []
+        tick_labels = []
+        amp_max = int(offset // pi)
+        for x in range(-amp_max, amp_max+1):
+            if x == 0:
+                tick_labels.append('0')
+                tick_vals.append(0)
+            elif x == 1:
+                tick_labels.append(r'$\pi$')
+                tick_vals.append(pi)
+            elif x == -1:
+                tick_labels.append(r'$-\pi$')
+                tick_vals.append(-pi)
+            else:
+                tick_labels.append(r'$'+str(x)+'\pi$')
+                tick_vals.append(x*pi)
+
+        plt.xticks(tick_vals, tick_labels)
+        plt.ylabel('Size of curve jump')
+        plt.xlabel('Position of kick (relative to initial one) ')
+        plt.tight_layout()
+
+
+
     if plot:
         plt.figure()
         plt.plot(phase/(2*pi), orbit, '+')
-        plt.xlabel(r'phase / $2 \pi$')
-        plt.axvline(kick_phase/(2*pi), -2, 2)
-
         sine_signal, phase_th = build_sine(kick_phase,
                                            tune,
                                            sin_coefficients
                                            )
-
         plt.plot(phase_th/(2*pi), sine_signal)
-
+        plt.axvline(kick_phase/(2*pi), -2, 2)
+        plt.xlabel(r'phase / $2 \pi$')
+        plt.legend(['Real orbit', 'Reconstructed sine'])
     return kick_phase, sin_coefficients

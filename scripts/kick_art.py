@@ -27,19 +27,12 @@ tuneX = 17.8509864542659
 tuneY = 6.74232980750181
 # -*- coding: utf-8 -*-
 
-import numpy as np
-from numpy import sin, pi
-import matplotlib.pyplot as plt
-
-from search_kicks.tools.maths import fit_sine
-from search_kicks.core import build_sine
-
-
 if __name__=='__main__':
     if len(sys.argv) == 1:
-        cidx = 30
+        cidx = np.random.randint(0, 64)
     else:
         cidx = int(sys.argv[1])
+    print('cidx = {}'.format(cidx))
 
     plt.close('all')
     pml = PyML.PyML()
@@ -89,16 +82,20 @@ if __name__=='__main__':
 
     plt.figure('CMs')
     plt.plot(pos_cor, r1)
+    plt.ylabel('Amplitude of correction')
+    plt.xlabel('Position [in m]')
     plt.title('Correctors')
 
     # Kick
-    kicka1, coeffa1 = skcore.get_kick(np.array(values), phase, tune, True)
+    kicka1, coeffa1 = skcore.get_kick(np.array(values), phase, tune, True, True)
 
     kik1 = np.argmin(abs(phase-kicka1))
 
     plt.figure('Orbits + kick')
     plt.plot(pos, values, '-g')
     plt.axvline(pos[kik1], -2, 2)
+    plt.ylabel('Distance to ref. orbit [in m]')
+    plt.xlabel('Position [in m]')
 
     if pos[kik1] == pos_cor[cidx]:
         text = names[kik1] + ' Good job!'
