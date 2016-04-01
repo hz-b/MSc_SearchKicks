@@ -87,7 +87,7 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
         plt.figure('skcore::get_kick -- Error curves [{}]'.format(len(plt.get_fignums())) )
         plt.subplot(2,1,1)
         plt.title('1- Sine Fit')
-        plt.plot(range(-len(rms_tab)//2, len(rms_tab)//2),rms_tab)
+        plt.plot(range(-len(rms_tab)//2, len(rms_tab)//2), rms_tab)
         plt.ylabel('RMS')
         plt.xlabel('Distance from chosen one (in indexes)')
         plt.grid()

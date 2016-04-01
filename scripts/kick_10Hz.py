@@ -3,7 +3,8 @@
 
 import os, sys
 __my_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(__my_dir+"/..")
+sys.path.append(__my_dir+"/PyML")
+sys.path.append(__my_dir+"/search_kicks")
 
 import scipy.io
 import numpy as np
@@ -11,12 +12,12 @@ import search_kicks.core as skcore
 import search_kicks.tools as sktools
 import PyML
 import matplotlib.pyplot as plt
+from zmq_client import *
 
-
-DEFAULT_DATA = '../search_kicks/default_data/'
+DEFAULT_DATA = 'search_kicks/search_kicks/default_data/'
 PHASE_FILE = DEFAULT_DATA + 'phases.mat'
 SMAT_FILE = DEFAULT_DATA + 'Smat-CM-Standard_HMI.mat'
-DATA_FILE = '../../_data/translated_FastBPMData_2015-10-26_06-57-56_vert10Hz.mat'
+#DATA_FILE = '../../_data/translated_FastBPMData_2015-10-26_06-57-56_vert10Hz.mat'
 #DATA_FILE = '../../_data/translated_FastBPMData_2015-10-26_06-54-42_horz10Hz.mat'
 #DATA_FILE = '../../_data/translated_FastBPMData_2015-10-26_06-39-01-ohne_10Hz.mat'
 #AXIS = 'x'
@@ -26,138 +27,141 @@ AXIS = 'y'
 tuneX = 17.8509864542659
 tuneY = 6.74232980750181
 ref_freq = 10#9.979248046875
+fs = 150 #Hz
+SAMPLE_NB = 1000
 
+def parse_frames(messages):
+    sample_nb = len(messages)
+    bpm_nb = np.fromstring(messages[0][2], dtype='double').size
+
+    valuesX = np.zeros((bpm_nb, sample_nb))
+    valuesY = np.zeros((bpm_nb, sample_nb))
+
+    # parse frames in values X
+    for count, message in enumerate(messages):
+        valuesX[:, count] = np.fromstring(message[2], dtype='double')
+        valuesY[:, count] = np.fromstring(message[3], dtype='double')
+        
+    return valuesX, valuesY
 
 if __name__=='__main__':
+    if len(sys.argv) > 1:
+        ref_freq = float(sys.argv[1])
+
     plt.close('all')
-    mml = PyML.PyML()
-    mml.setao(mml.loadFromExtern('../external/bessyIIinit.py', 'ao'))
+    pml = PyML.PyML()
+    pml.setao(pml.loadFromExtern('search_kicks/external/bessyIIinit.py', 'ao'))
+    pml.loadBPMOffsets('/opt/OPI/MapperApplications/conf/Orbit/SR/RefOrbit.Dat')
 
-    active_bpms = mml.getActiveIdx('BPMx')
+    active_bpmsx = pml.getActiveIdx('BPMx')
+    active_bpmsy = pml.getActiveIdx('BPMy')
 
-    sx = mml.getfamilydata('BPMx', 'Pos')
-    sy = mml.getfamilydata('BPMy', 'Pos')
+    sx = pml.getfamilydata('BPMx', 'Pos')
+    sy = pml.getfamilydata('BPMy', 'Pos')
 
-    namesX = mml.getfamilydata('BPMx', 'CommonNames')
-    namesY = mml.getfamilydata('BPMx', 'CommonNames')
+    namesX = pml.getfamilydata('BPMx', 'CommonNames')
+    namesY = pml.getfamilydata('BPMx', 'CommonNames')
 
     Smat_xx, Smat_yy = sktools.IO.load_Smat(SMAT_FILE)
-    Smat_xx = Smat_xx[active_bpms, :]
-    Smat_yy = Smat_yy[active_bpms, :]
+    Smat_xx = Smat_xx[active_bpmsx, :]
+    Smat_yy = Smat_yy[active_bpmsy, :]
 
-    valuesX, valuesY, _, _, _, fs = sktools.IO.load_timeanalys(DATA_FILE)
+    #idx = pml.family2idx('BPMx')
+    #idy = pml.family2idx('BPMy')
+
+    #offsetx = pml.getfamilydata('BPMx','Offset',None,idx)
+    #offsety = pml.getfamilydata('BPMy','Offset',None,idy)
+
+    zclient = ZmqClient()
+    zclient.connect("tcp://gofbz12c.ctl.bessy.de:5563")
+    zclient.subscribe(['FOFB-BPM-DATA'])
+    messages = zclient.receive(SAMPLE_NB)
+   
+    valuesX, valuesY = parse_frames(messages)
 
     phases_mat = scipy.io.loadmat(PHASE_FILE)
-    phaseX = phases_mat['PhaseX'][:, 0]
-    phaseY = phases_mat['PhaseZ'][:, 0]
+    phaseX = np.delete(phases_mat['PhaseX'][:, 0], 38)
+    phaseY = np.delete(phases_mat['PhaseZ'][:, 0], 38)
 
     if AXIS == 'y':
-        pos = sy[active_bpms]
+        pos = sy[active_bpmsy]
         Smat = Smat_yy
         phase = phaseY
         tune = tuneY
-        values = valuesY[active_bpms, :]
-        names = namesY[active_bpms]
+        values = valuesY#[active_bpms, :]
+        names = namesY[active_bpmsy]
     elif AXIS == 'x':
-        pos = sx[active_bpms]
+        pos = sx[active_bpmsx]
         Smat = Smat_xx
         phase = phaseX
         tune = tuneX
-        values = valuesX[active_bpms, :]
-        names = namesX[active_bpms]
+        values = valuesX#[active_bpms, :]
+        names = namesX[active_bpmsx]
 
-    sp_nb = values.shape[1]
+    sample_nb = values.shape[1]
 
     # Extract sin cos
-    A, B = sktools.maths.extract_sin_cos(values, fs, ref_freq, 'sum')
-    b1, b2 = sktools.maths.extract_sin_cos(values, fs, ref_freq, 'fft')
+    asin, acos = sktools.maths.extract_sin_cos(values, fs, ref_freq, 'fft')
 
     plt.figure("sin/cos")
-    plt.subplot(2,1,1)
-    plt.plot(pos, A)
-    plt.plot(pos, B)
-    plt.legend(['sin','cos'])
-    plt.title('With sums of cos/sin')
-
-    plt.subplot(2,1,2)
-    plt.plot(pos, b1)
-    plt.plot(pos, b2)
+    plt.plot(pos, asin)
+    plt.plot(pos, acos)
     plt.legend(['sin','cos'])
     plt.title('With fft')
 
     # Optimize
     step_size = 0.1
-    b1_opt, b2_opt, _ = sktools.maths.optimize_rotation(b1, b2, step_size)
-    a = [b1,b2]
-    klt = sktools.maths.klt(a)
+    asin_opt, acos_opt, _ = sktools.maths.optimize_rotation(asin, acos, step_size)
+    A = [asin, acos]
+    klt = sktools.maths.klt(A)
 
     plt.figure("optimisaton")
     plt.subplot(2,1,1)
     plt.title("Rotation")
-    plt.plot(pos, b1_opt)
-    plt.plot(pos, b2_opt)
+    plt.plot(pos, asin_opt)
+    plt.plot(pos, acos_opt)
+    plt.legend(['sin','cos'])
     plt.subplot(2,1,2)
     plt.title("KLT")
     plt.plot(pos, klt[0])
     plt.plot(pos, klt[1])
 
     # Correction fft
-    S_inv = sktools.maths.inverse_with_svd(Smat_xx, 10)
-
-    r1 = np.dot(S_inv, b1_opt)
-    r2 = np.dot(S_inv, b2_opt)
-
-    plt.figure('CMs, fft')
-    plt.plot(r1)
-    plt.plot(r2)
-    plt.title('Correctors, fft')
+    S_inv = sktools.maths.inverse_with_svd(Smat, 32)
 
     # Kick fft
-    kicka1, coeffa1 = skcore.get_kick(np.array(b1_opt), phase, tune, False)
-    kicka2, coeffa2 = skcore.get_kick(np.array(b2_opt), phase, tune, False)
+    phase_kick, coeff = skcore.get_kick(np.array(asin_opt), phase, tune, True, True)
+    kick_idx = np.argmin(abs(phase-phase_kick))
+    corr = np.dot(S_inv, asin_opt)
 
-    kik1 = np.argmin(abs(phase-kicka1))
-    kik2 = np.argmin(abs(phase-kicka2))
+    # Kick fft
+    phase_kick_cos, coeff = skcore.get_kick(np.array(acos_opt), phase, tune, True,True)
+    kick_idx_cos = np.argmin(abs(phase-phase_kick_cos))
 
-    plt.figure('Orbits + kick, fft')
+    plt.figure('CMs, kick')
     plt.subplot(2, 1, 1)
-    plt.plot(pos, b1_opt, '-g')
-    plt.axvline(pos[kik1], -2, 2)
-    plt.title('sine')
+    plt.plot(corr)
+    plt.title('Correctors for f = {} Hz'.format(ref_freq))
+    
 
     plt.subplot(2, 1, 2)
-    plt.plot(pos, b2_opt, '-g')
-    plt.axvline(pos[kik2], -2, 2)
-    plt.title('cosine')
+    plt.plot(pos, asin_opt, '-g')
+    plt.axvline(pos[kick_idx], -2, 2)
+    plt.title('kick in sine component for f = {} Hz'.format(ref_freq))
 
-    # Correction sum
-    a = [A,B]
-    [A_opt, B_opt] = sktools.maths.klt(a)
-    S_inv = sktools.maths.inverse_with_svd(Smat_xx, 10)
+    print("sin = " + names[kick_idx])
+    corr_cos = np.dot(S_inv, acos_opt)
 
-    cor1 = np.dot(S_inv, A_opt)
-    cor2 = np.dot(S_inv, B_opt)
-
-    plt.figure('CMs, sum')
-    plt.plot(cor1)
-    plt.plot(cor2)
-    plt.title('Correctors, sum')
-
-    # Kick sum
-    kickA, coeffa1 = skcore.get_kick(np.array(A_opt), phase, tune, False)
-    kickB, coeffa2 = skcore.get_kick(np.array(B_opt), phase, tune, False)
-
-    kik1 = np.argmin(abs(phase-kickA))
-    kik2 = np.argmin(abs(phase-kickB))
-
-    plt.figure('Orbits + kick, sum')
+    plt.figure('CMs, kick cos')
     plt.subplot(2, 1, 1)
-    plt.plot(pos, A_opt, '-g')
-    plt.axvline(pos[kik1], -2, 2)
-    plt.title('sine')
+    plt.plot(corr_cos)
+    plt.title('Correctors for f = {} Hz [cos]'.format(ref_freq))
+    
 
     plt.subplot(2, 1, 2)
-    plt.plot(pos, B_opt, '-g')
-    plt.axvline(pos[kik2], -2, 2)
-    plt.title('cosine')
-    print(names[kik1], names[kik2])
+    plt.plot(pos, acos_opt, '-g')
+    plt.axvline(pos[kick_idx_cos], -2, 2)
+    plt.title('kick in sine component for f = {} Hz [cos]'.format(ref_freq))
+
+    print("cos = " + names[kick_idx_cos])
+    plt.show()
