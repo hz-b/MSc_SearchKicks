@@ -34,6 +34,7 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
     bpm_nb = orbit.size
     rms_tab = []
     best_rms = 0
+    sin_coefficients = []
 
     # duplicate the signal to find the sine between the kick and its duplicate
     signal_exp = np.concatenate((orbit, orbit))
@@ -45,7 +46,8 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
         signal_t = signal_exp[i:i+bpm_nb]
         phase_t = phase_exp[i:i+bpm_nb]
 
-        _, b, c = fit_sine(signal_t, phase_t, 'inv', False)
+        _, b, c = fit_sine(signal_t, phase_t, 'sum', False)
+        sin_coefficients.append([b,c])
 
         y = b*sin(c + phase_t)
 
@@ -55,7 +57,6 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
         rms_tab.append(rms)
         if rms < best_rms or i == 0:
             best_rms = rms
-            sin_coefficients = [b, c]
             if i == 0:
                 i_best = bpm_nb
             else:
@@ -68,7 +69,7 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
     n_lspace = 10000
 
     interval = np.linspace(phase_previous, phase_next, n_lspace)
-    b, c = sin_coefficients
+    b, c = sin_coefficients[i_best % bpm_nb]
     idx_min = np.argmin(
         abs(b*sin(interval + c) - b*sin(interval + c+2*pi*tune))
         )
@@ -78,18 +79,22 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
 
     if error_curves:
         transl = bpm_nb//2 - i_best
-        rms_tab = np.roll(rms_tab,transl)
+        rms_tab = np.roll(rms_tab, transl)
+        sin_coef_tmp = np.array(np.roll(sin_coefficients, transl))
+
         offset = 2*pi
         interval_rel = np.linspace(-offset, +offset, n_lspace)
         interval = interval_rel+phase_exp[i_best]
-        b, c = sin_coefficients
 
         plt.figure('skcore::get_kick -- Error curves [{}]'.format(len(plt.get_fignums())) )
         plt.subplot(2,1,1)
         plt.title('1- Sine Fit')
         plt.plot(range(-len(rms_tab)//2, len(rms_tab)//2), rms_tab)
+        plt.plot(range(-len(rms_tab)//2, len(rms_tab)//2), sin_coef_tmp[:,0]*100)
+        plt.plot(range(-len(rms_tab)//2, len(rms_tab)//2), -sin_coef_tmp[:,1]*1000/(2*pi))
+        plt.legend(['RMS',r'Amplitude $\times 100$',r'Phase $\times (-1000 / 2\pi)$'])
         plt.ylabel('RMS')
-        plt.xlabel('Distance from chosen one (in indexes)')
+        plt.xlabel('Distance from chosen one (in indexes), chosen one is {}'.format(i_best%bpm_nb))
         plt.grid()
 
         plt.subplot(2,1,2)
@@ -126,10 +131,10 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
         plt.plot(phase/(2*pi), orbit, '+')
         sine_signal, phase_th = build_sine(kick_phase,
                                            tune,
-                                           sin_coefficients
+                                           sin_coefficients[i_best % bpm_nb]
                                            )
         plt.plot(phase_th/(2*pi), sine_signal)
         plt.axvline(kick_phase/(2*pi), -2, 2)
         plt.xlabel(r'phase / $2 \pi$')
         plt.legend(['Real orbit', 'Reconstructed sine'])
-    return kick_phase, sin_coefficients
+    return kick_phase, sin_coefficients[i_best % bpm_nb]
