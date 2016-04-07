@@ -27,13 +27,8 @@ tuneX = 17.8509864542659
 tuneY = 6.74232980750181
 # -*- coding: utf-8 -*-
 
-if __name__=='__main__':
-    if len(sys.argv) == 1:
-        cidx = np.random.randint(0, 64)
-    else:
-        cidx = int(sys.argv[1])
-    print('cidx = {}'.format(cidx))
-
+def art_main(cidx, plotopt=True):
+    print('I set cidx to {}'.format(cidx))
     plt.close('all')
     pml = PyML.PyML()
     pml.setao(pml.loadFromExtern('../../PyML/config/bessyIIinit.py', 'ao'))
@@ -80,27 +75,52 @@ if __name__=='__main__':
 
     r1 = np.dot(S_inv, values)
 
-    plt.figure('CMs')
-    plt.plot(pos_cor, r1)
-    plt.ylabel('Amplitude of correction')
-    plt.xlabel('Position [in m]')
-    plt.title('Correctors')
+    if plotopt:
+        plt.figure('CMs')
+        plt.plot(pos_cor, r1)
+        plt.ylabel('Amplitude of correction')
+        plt.xlabel('Position [in m]')
+        plt.title('Correctors')
 
     # Kick
-    kicka1, coeffa1 = skcore.get_kick(np.array(values), phase, tune, True, True)
+    kicka1, coeffa1 = skcore.get_kick(np.array(values), phase, tune, plotopt, plotopt)
 
     kik1 = np.argmin(abs(phase-kicka1))
 
-    plt.figure('Orbits + kick')
-    plt.plot(pos, values, '-g')
-    plt.axvline(pos[kik1], -2, 2)
-    plt.ylabel('Distance to ref. orbit [in m]')
-    plt.xlabel('Position [in m]')
+    if plotopt:
+        plt.figure('Orbits + kick')
+        plt.plot(pos, values, '-g')
+        plt.axvline(pos[kik1], -2, 2)
+        plt.ylabel('Distance to ref. orbit [in m]')
+        plt.xlabel('Position [in m]')
 
     if pos[kik1] == pos_cor[cidx]:
         text = names[kik1] + ' Good job!'
     else:
-        text = '{} found, d={}'.format(names[kik1],abs(pos_cor[cidx]-pos[kik1]))
+        val = abs(pos_cor[cidx]-pos[kik1])
+        if val > 240/2:
+            val = 240-val
+        text = 'idx {} = {} found, d={}'.format(kik1, names[kik1], val)
     print(text)
-    print(np.argmin(abs(pos-pos_cor[cidx])))
-    plt.show()
+    shouldidx = np.argmin(abs(pos-pos_cor[cidx]))
+    print('It should have been idx {} = {}'.format(shouldidx,names[shouldidx]))
+    if plotopt:
+        plt.show()
+    return val
+
+if __name__=='__main__':
+    if len(sys.argv) == 1:
+        cidx = np.random.randint(0, 64)
+        art_main(cidx)
+    elif sys.argv[1] == 'all':
+        t = []
+        for k in range(64):
+            t.append(art_main(k, False))
+        plt.figure()
+        plt.plot(t)
+        plt.xlabel('Corrector moved [index]')
+        plt.ylabel('Distance: error of localization [in m]')
+        plt.show()
+    else:
+        cidx = int(sys.argv[1])
+        art_main(cidx)
