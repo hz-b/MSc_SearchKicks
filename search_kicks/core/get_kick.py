@@ -45,9 +45,8 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
     for i in range(bpm_nb):
         signal_t = signal_exp[i:i+bpm_nb]
         phase_t = phase_exp[i:i+bpm_nb]
-
         _, b, c = fit_sine(signal_t, phase_t, 'sum', False)
-        sin_coefficients.append([b,c])
+        sin_coefficients.append([b, c])
 
         y = b*sin(c + phase_t)
 

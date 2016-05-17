@@ -4,9 +4,11 @@
 """ Maths-related helpers needed in the project.
 """
 
+from __future__ import division, print_function
+
 from math import atan2
 import numpy as np
-from numpy import cos, sin
+from numpy import cos, sin, exp
 import matplotlib.pyplot as plt
 
 
@@ -142,7 +144,7 @@ def fit_sin_cos(signal, phase, method, offset_opt=True, plot=False):
 
     # check errors
     if phase.shape[0] != signal.shape[0]:
-        raise ValueError('Arguments 1 and 2 must have the same length')
+        raise ValueError('Arguments 1 and 2 must have the same length, not {} and {}'.format(phase.shape[0],signal.shape[0]))
     if phase.shape[1] != 1 or signal.shape[1] != 1:
         raise ValueError('Arguments 1 and 2 must be (n,1)-arrays')
     if not np.isscalar(offset_opt) or not np.isscalar(plot):
@@ -204,22 +206,19 @@ def extract_sin_cos(values, fs, f, method):
 def _fit_with_sum(signal, phase, offset_opt):
 
     N = signal.size
-    ssin = sin(phase)
-    scos = cos(phase)
+    e = exp(1j*phase)
 
     if offset_opt:
         offset = sum(signal)[0]/N
     else:
         offset = 0.
 
-    amp_sin = sum(ssin*signal)[0]*2/N
-    amp_cos = sum(scos*signal)[0]*2/N
+    c = sum(e*signal)[0]*2/N
 
-    return offset, amp_sin, amp_cos
+    return offset, np.imag(c), np.real(c)
 
 
 def _fit_with_inversion(signal, phase, offset_opt):
-
     # set constant term
     if offset_opt:
         constant = np.ones(phase.shape)
@@ -242,11 +241,15 @@ def _fit_with_inversion(signal, phase, offset_opt):
 def _extract_cos_sin_withsum(values, fs, f):
     amp_sin = []
     amp_cos = []
-    t = np.arange(values[1,:].size)/fs
 
-    phase_sin = 2*np.pi*t*f
-    for k in range(values.shape[0]):
-        _, A_t, B_t = fit_sin_cos(values[k, :],
+    sample_nb = values.shape[1]
+    t = np.arange(sample_nb)/fs
+    all_freq = fs * 1/sample_nb * np.arange(sample_nb)
+    f_approx = all_freq[np.argmin(abs(all_freq-f))]
+
+    phase_sin = 2*np.pi*t*f_approx
+    for row in values:
+        _, A_t, B_t = fit_sin_cos(row,
                                   phase_sin,
                                   'sum',
                                   False)
@@ -259,17 +262,15 @@ def _extract_cos_sin_withsum(values, fs, f):
 def _extract_cos_sin_withfft(values, fs, f):
     sample_nb = values.shape[1]
     t = np.arange(sample_nb)/fs
+    all_freq = fs * 1/sample_nb * np.arange(sample_nb)
+    f_approx = all_freq[np.argmin(abs(all_freq-f))]
 
-    frequencies = np.fft.fftfreq(t.shape[-1], 1/float(fs))
+    frequencies = np.fft.fftfreq(t.shape[-1], t[1])
+    freq_idx = np.argmin(np.abs(frequencies - f_approx))
 
-    freq_idx = np.argmin(np.abs(frequencies - f))
-
-    amp_sin = []
-    amp_cos = []
-
-    fftx = 2*np.fft.fft(values, axis=1)/sample_nb
-    amp_cos = fftx[:, freq_idx].real
-    amp_sin = fftx[:, freq_idx].imag
+    fftx = np.fft.fft(values, axis=1)*2/sample_nb
+    amp_cos = np.real(fftx[:, freq_idx])
+    amp_sin = -np.imag(fftx[:, freq_idx])
 
     return np.array(amp_sin), np.array(amp_cos)
 
