@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import division, print_function
+
 import numpy as np
 from numpy import sin, pi
 import matplotlib.pyplot as plt
@@ -50,31 +52,20 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
 
         y = b*sin(c + phase_t)
 
-        # calculate the RMS. the best fit means that the kick is between
-        # the BPMs idx and idx+1
+        # calculate the RMS. the best fit means that the kick is around
+        # the ith BPMs
         rms = sum(pow(y-signal_t, 2))
         rms_tab.append(rms)
         if rms < best_rms or i == 0:
             best_rms = rms
-            if i == 0:
-                i_best = bpm_nb
-            else:
-                i_best = i
+            i_best = i
 
-    # Search between the previous and the next 1/4 period
-    phase_previous = phase_exp[i_best]-pi/2.0
-    phase_next = phase_exp[i_best]+pi/2.0
-
-    n_lspace = 10000
-
-    interval = np.linspace(phase_previous, phase_next, n_lspace)
-    b, c = sin_coefficients[i_best % bpm_nb]
-    idx_min = np.argmin(
-        abs(b*sin(interval + c) - b*sin(interval + c+2*pi*tune))
-        )
-
-    # Here is the kick
-    kick_phase = interval[idx_min] % phase_exp[bpm_nb]
+    b, c = sin_coefficients[i_best]
+    apriori_phase = phase[i_best]
+    k = int((apriori_phase + c)/np.pi + (tune-1/2))
+    solutions = (1/2 - tune) * np.pi - c + np.array([k, k+1])*np.pi
+    idx = np.argmin(abs(solutions - apriori_phase))
+    kick_phase = solutions[idx]
 
     if error_curves:
         transl = bpm_nb//2 - i_best
@@ -82,25 +73,32 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
         sin_coef_tmp = np.array(np.roll(sin_coefficients, transl))
 
         offset = 2*pi
+        n_lspace = 10000
+
         interval_rel = np.linspace(-offset, +offset, n_lspace)
         interval = interval_rel+phase_exp[i_best]
 
-        plt.figure('skcore::get_kick -- Error curves [{}]'.format(len(plt.get_fignums())) )
-        plt.subplot(2,1,1)
+        plt.figure('skcore::get_kick -- Error curves [{}]'
+                   .format(len(plt.get_fignums())))
+        plt.subplot(211)
         plt.title('1- Sine Fit')
-        plt.plot(range(-len(rms_tab)//2, len(rms_tab)//2), rms_tab)
-        plt.plot(range(-len(rms_tab)//2, len(rms_tab)//2), sin_coef_tmp[:,0]*100)
-        plt.plot(range(-len(rms_tab)//2, len(rms_tab)//2), -sin_coef_tmp[:,1]*1000/(2*pi))
-        plt.legend(['RMS',r'Amplitude $\times 100$',r'Phase $\times (-1000 / 2\pi)$'])
+        idx_range = range(-len(rms_tab)//2, len(rms_tab)//2)
+        plt.plot(idx_range, rms_tab)
+        plt.plot(idx_range, sin_coef_tmp[:, 0]*100)
+        plt.plot(idx_range, -sin_coef_tmp[:, 1]*1000/(2*pi))
+        plt.legend(['RMS',
+                    r'Amplitude $\times 100$',
+                    r'Phase $\times (-1000 / 2\pi)$'
+                    ])
         plt.ylabel('RMS')
-        plt.xlabel('Distance from chosen one (in indexes), chosen one is {}'.format(i_best%bpm_nb))
+        plt.xlabel('Distance from chosen one (in indexes), chosen one is {}'
+                   .format(i_best))
         plt.grid()
 
-        plt.subplot(2,1,2)
+        plt.subplot(212)
         plt.title('2- Find kick')
-        plt.plot(
-            interval_rel, abs(b*sin(interval + c) - b*sin(interval+c+2*pi*tune))
-            )
+        plt.plot(interval_rel,
+                 abs(b*sin(interval + c) - b*sin(interval+c+2*pi*tune)))
         tick_vals = []
         tick_labels = []
         amp_max = int(offset // pi)
@@ -123,10 +121,9 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
         plt.xlabel('Position of kick (relative to initial one) ')
         plt.tight_layout()
 
-
-
     if plot:
-        plt.figure('skcore::get_kick -- Orbit plot [{}]'.format(len(plt.get_fignums())) )
+        plt.figure('skcore::get_kick -- Orbit plot [{}]'
+                   .format(len(plt.get_fignums())))
         plt.plot(phase/(2*pi), orbit, '+')
         sine_signal, phase_th = build_sine(kick_phase,
                                            tune,
