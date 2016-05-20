@@ -28,7 +28,6 @@ tuneX = 17.8509864542659
 tuneY = 6.74232980750181
 ref_freq = 10#9.979248046875
 fs = 150 #Hz
-SAMPLE_NB = 1000
 
 
 def ze_func(values, fs, f):
@@ -39,6 +38,15 @@ def ze_func(values, fs, f):
     a = np.sum(e*values, axis=1) * 2/N
 
     return (a)
+
+
+def goertzel(x, fs, ref_freq):
+    w0 = 2*np.pi*ref_freq
+    M, N = x.shape
+    t = np.arange(N).reshape((1, N)).repeat(M, axis=0) /fs
+    y = np.sum(x*np.exp(1j*w0*t), axis=1)
+    return np.imag(y), np.real(y)
+
 
 if __name__ == '__main__':
 
@@ -94,110 +102,109 @@ if __name__ == '__main__':
     sample_nb = values.shape[1]
 
     t = np.arange(sample_nb)/fs
-    N = np.floor(np.floor(sample_nb/fs * ref_freq)/ref_freq * fs)
 
     l = []
     lf = []
 
-    for i in np.arange(75):
-        all_freq = fs * 1/sample_nb * np.arange(sample_nb)
-        f_approx = all_freq[np.argmin(abs(all_freq-i))]
-        tph = 2*np.pi*f_approx*t
+    for i in range(75):
+        tph = 2*np.pi*i*t
         test = np.sin(tph).reshape((1, sample_nb))
-        asinf, acosf = sktools.maths.extract_sin_cos(test, fs, i, 'fft')
-        a, b = sktools.maths.extract_sin_cos(test, fs, i, 'sum')
+        a, b = sktools.maths.extract_sin_cos(test, fs, i)
         l.append((b[0], a[0]))
-        lf.append((acosf[0], asinf[0]))
-    plt.subplot(211)
     plt.title('With approx freq (top: sum, bottom: fft)')
     plt.plot(l)
     plt.xlabel('f')
     plt.ylim([-0.2, 1.2])
-    plt.subplot(212)
-    plt.plot(lf)
-    plt.xlabel('f')
 
     tph = 2*np.pi*ref_freq*t
     test = 1*np.sin(tph)
     test = test.reshape((1, sample_nb)).repeat(phase.size, axis=0)
-    test = test[:, :N]
-    asinf, acosf = sktools.maths.extract_sin_cos(test, fs, ref_freq, 'fft')
-    asin, acos = sktools.maths.extract_sin_cos(values[:, :N], fs, ref_freq, 'sum')
+    test = test
+    asin, acos = sktools.maths.extract_sin_cos(values, fs, ref_freq)
 
     plt.figure()
-    plt.plot(pos, asinf)
-    plt.plot(pos, acosf)
+
     plt.plot(pos, asin, 'p')
     plt.plot(pos, acos, 'p')
-    plt.legend(['fft - sin', 'fft - cos', 'sum - sin', 'sum - cos'])
     plt.title('Extracted test signal (should be 1)')
 
-    asinf, acosf = sktools.maths.extract_sin_cos(values, fs, ref_freq, 'fft')
-    asin, acos = sktools.maths.extract_sin_cos(values, fs, ref_freq, 'sum')
+    p = 2*np.pi*ref_freq*t[:2000]
+
+    for k in range(values.shape[0]):
+        _, a, b = sktools.maths.fit_sin_cos(values[k,:2000], p, False)
+        asin[k] = a
+        acos[k] = b
 
     plt.figure()
-    plt.plot(pos, asinf)
-    plt.plot(pos, acosf)
     plt.plot(pos, acos)
     plt.plot(pos, asin)
-    plt.legend(['fft - sin', 'fft - cos', 'sum - sin', 'sum - cos'])
-    plt.title('Extracted signal')
-
-    # Optimize
-    step_size = 0.1
-    asin_opt, acos_opt, _ = sktools.maths.optimize_rotation(asin,
-                                                            acos,
-                                                            step_size)
-    A = [asin, acos]
-    klt = sktools.maths.klt(A)
-
-    plt.figure("optimisaton")
-    plt.subplot(211)
-    plt.title("Rotation")
-    plt.plot(pos, asin_opt)
-    plt.plot(pos, acos_opt)
     plt.legend(['sin', 'cos'])
-    plt.subplot(212)
-    plt.title("KLT")
-    plt.plot(pos, klt[0])
-    plt.plot(pos, klt[1])
+    plt.title('INV')
 
-    # Correction fft
-    S_inv = sktools.maths.inverse_with_svd(Smat, 32)
 
-    # Kick fft
-    phase_kick, coeff = skcore.get_kick(np.array(asin_opt), phase, tune,
-                                        True, True)
-    kick_idx = np.argmin(abs(phase-phase_kick))
-    corr = np.dot(S_inv, asin_opt)
+    asin, acos = sktools.maths.extract_sin_cos(values[:,:2000], fs, ref_freq)
 
-    # Kick fft
-    phase_kick_cos, coeff = skcore.get_kick(np.array(acos_opt), phase, tune,
-                                            True, True)
-    kick_idx_cos = np.argmin(abs(phase-phase_kick_cos))
+    plt.figure()
+    plt.plot(pos, acos)
+    plt.plot(pos, asin)
+    plt.legend(['sin', 'cos'])
+    plt.title('sincos')
 
-    plt.figure('CMs, kick')
-    plt.subplot(211)
-    plt.plot(corr)
-    plt.title('Correctors for f = {} Hz [sin]'.format(ref_freq))
-
-    plt.subplot(212)
-    plt.plot(pos, asin_opt, '-g')
-    plt.axvline(pos[kick_idx], -2, 2)
-    plt.title('kick in sine component for f = {} Hz'.format(ref_freq))
-
-    print("sin = " + names[kick_idx])
-    corr_cos = np.dot(S_inv, acos_opt)
-
-    plt.figure('CMs, kick cos')
-    plt.subplot(211)
-    plt.plot(corr_cos)
-    plt.title('Correctors for f = {} Hz [cos]'.format(ref_freq))
-
-    plt.subplot(212)
-    plt.plot(pos, acos_opt, '-g')
-    plt.axvline(pos[kick_idx_cos], -2, 2)
-    plt.title('kick in cosine component for f = {} Hz'.format(ref_freq))
-
-    print("cos = " + names[kick_idx_cos])
+#    # Optimize
+#    step_size = 0.1
+#    asin_opt, acos_opt, _ = sktools.maths.optimize_rotation(asin,
+#                                                            acos,
+#                                                            step_size)
+#    A = [asin, acos]
+#    klt = sktools.maths.klt(A)
+#
+#    plt.figure("optimisaton")
+#    plt.subplot(211)
+#    plt.title("Rotation")
+#    plt.plot(pos, asin_opt)
+#    plt.plot(pos, acos_opt)
+#    plt.legend(['sin', 'cos'])
+#    plt.subplot(212)
+#    plt.title("KLT")
+#    plt.plot(pos, klt[0])
+#    plt.plot(pos, klt[1])
+#
+#    # Correction fft
+#    S_inv = sktools.maths.inverse_with_svd(Smat, 32)
+#
+#    # Kick fft
+#    phase_kick, coeff = skcore.get_kick(np.array(asin_opt), phase, tune,
+#                                        True, True)
+#    kick_idx = np.argmin(abs(phase-phase_kick))
+#    corr = np.dot(S_inv, asin_opt)
+#
+#    # Kick fft
+#    phase_kick_cos, coeff = skcore.get_kick(np.array(acos_opt), phase, tune,
+#                                            True, True)
+#    kick_idx_cos = np.argmin(abs(phase-phase_kick_cos))
+#
+#    plt.figure('CMs, kick')
+#    plt.subplot(211)
+#    plt.plot(corr)
+#    plt.title('Correctors for f = {} Hz [sin]'.format(ref_freq))
+#
+#    plt.subplot(212)
+#    plt.plot(pos, asin_opt, '-g')
+#    plt.axvline(pos[kick_idx], -2, 2)
+#    plt.title('kick in sine component for f = {} Hz'.format(ref_freq))
+#
+#    print("sin = " + names[kick_idx])
+#    corr_cos = np.dot(S_inv, acos_opt)
+#
+#    plt.figure('CMs, kick cos')
+#    plt.subplot(211)
+#    plt.plot(corr_cos)
+#    plt.title('Correctors for f = {} Hz [cos]'.format(ref_freq))
+#
+#    plt.subplot(212)
+#    plt.plot(pos, acos_opt, '-g')
+#    plt.axvline(pos[kick_idx_cos], -2, 2)
+#    plt.title('kick in cosine component for f = {} Hz'.format(ref_freq))
+#
+#    print("cos = " + names[kick_idx_cos])
     plt.show()

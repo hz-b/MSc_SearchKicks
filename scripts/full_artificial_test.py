@@ -28,7 +28,7 @@ NB_SP = T_MAX*FS
 tuneX = 17.8509864542659
 
 
-def do_get_kick(A, B, phase, tune, pos, title):
+def do_get_kick(A, B, phase, tune, pos):
 
     kicka1, coeffa1 = skcore.get_kick(np.array(A), phase, tune, False)
     kicka2, coeffa2 = skcore.get_kick(np.array(B), phase, tune, False)
@@ -36,7 +36,7 @@ def do_get_kick(A, B, phase, tune, pos, title):
     kik1 = np.argmin(abs(phase-kicka1))
     kik2 = np.argmin(abs(phase-kicka2))
 
-    plt.figure('Orbits + kick with '+title)
+    plt.figure('Orbits + kick')
     plt.subplot(2, 1, 1)
     plt.plot(pos, A, '-g')
     plt.axvline(pos[kik1], -2, 2)
@@ -113,30 +113,18 @@ if __name__=='__main__':
         BPMx_t[i,:] = BPMx[i]*np.sin(F*2*np.pi*t+PHASE)
     t2 = toc(t1, "Harmonic disturb init")
 
-    A, B = sktools.maths.extract_sin_cos(BPMx_t, FS, F, 'sum')
+    A, B = sktools.maths.extract_sin_cos(BPMx_t, FS, F)
     t2 = toc(t2, "Harmonic disturb, sum")
 
-    b1, b2 = sktools.maths.extract_sin_cos(BPMx_t, FS, F, 'fft')
-    t2 = toc(t2, "Harmonic disturb, fft")
-
     plt.figure("sin/cos")
-    plt.subplot(2,1,1)
     plt.plot(sx, A)
     plt.plot(sx, B)
     plt.legend(['sin','cos'])
-    plt.title('With sums of cos/sin')
-
-    plt.subplot(2,1,2)
-    plt.plot(sx, b1)
-    plt.plot(sx, b2)
-    plt.legend(['sin','cos'])
-    plt.title('With fft')
 
     phase = phases_mat['PhaseX'][:, 0]
 
-    kick1a, kick2a = do_get_kick(b1, b2, phase, tuneX, sx, 'fft')
-    kick1b, kick2b = do_get_kick(A, B, phase, tuneX, sx, 'sin_cos')
-    idkick = np.argmin(abs(phaseX-kick1a))
+    kick1b, kick2b = do_get_kick(A, B, phase, tuneX, sx)
+    idkick = np.argmin(abs(phaseX-kick1b))
 
     print(sx[idkick], cx[SOURCE_DISTURB])
 
