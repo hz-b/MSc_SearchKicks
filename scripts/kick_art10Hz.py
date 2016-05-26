@@ -7,6 +7,7 @@ import os, sys
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io
+from scipy import signal, optimize
 
 import PyML
 __my_dir = os.path.dirname(os.path.realpath(__file__))
@@ -30,23 +31,35 @@ ref_freq = 10#9.979248046875
 fs = 150 #Hz
 
 
-def ze_func(values, fs, f):
-    M, N = values.shape
-    t = np.arange(N) / fs
-    e = np.exp(1j*2*np.pi*f*t).reshape((1, N)).repeat(M, axis=0)
-#    plt.plot(np.fft.fftfreq(N,t[1]), np.abs(np.fft.fft(np.real(e[0,:])))*2/N)
-    a = np.sum(e*values, axis=1) * 2/N
+def ze_func(values, t, fs, ref_freq, title):
+    def func(t, a, b, c, f):
+        return a + b*np.cos(2*np.pi*f*t)+c*np.sin(2*np.pi*f*t)
 
-    return (a)
+    asin, acos = sktools.maths.extract_sin_cos(values, fs, ref_freq)
+    plt.figure()
+    plt.subplot(211)
+    plt.title(title)
+    plt.plot(pos, asin)
+    plt.plot(pos, acos)
+    plt.legend(['sin', 'cos'])
 
+    N = values.shape[0]
+    offs = np.zeros(N)
+    ampc = np.zeros(N)
+    amps = np.zeros(N)
+    freq = np.zeros(N)
+    for idx in range(values.shape[0]):
+        y = values[idx,:]
+        res, _ \
+            = optimize.curve_fit(func, t, y,
+                                 [np.mean(y), acos[idx], asin[idx], ref_freq])
 
-def goertzel(x, fs, ref_freq):
-    w0 = 2*np.pi*ref_freq
-    M, N = x.shape
-    t = np.arange(N).reshape((1, N)).repeat(M, axis=0) /fs
-    y = np.sum(x*np.exp(1j*w0*t), axis=1)
-    return np.imag(y), np.real(y)
+        [offs[idx], ampc[idx], amps[idx], freq[idx]] = res
 
+    plt.subplot(212)
+    plt.plot(pos, amps)
+    plt.plot(pos, ampc)
+    plt.legend(['sin', 'cos'])
 
 if __name__ == '__main__':
 
@@ -98,57 +111,31 @@ if __name__ == '__main__':
         values = valuesX[active_bpmsx, :]
         names = namesX
 
-    phase = pos / 250 * 2*np.pi * tune
+
+
     sample_nb = values.shape[1]
+    Nmax = sample_nb
 
     t = np.arange(sample_nb)/fs
+    p0 = np.random.random() * 2*np.pi
+    tenHz = np.sin(2*np.pi*10*t + p0)
 
-    l = []
-    lf = []
+    ze_func(values[:,:Nmax], t[:Nmax], fs, ref_freq, 'No filter')
 
-    for i in range(75):
-        tph = 2*np.pi*i*t
-        test = np.sin(tph).reshape((1, sample_nb))
-        a, b = sktools.maths.extract_sin_cos(test, fs, i)
-        l.append((b[0], a[0]))
-    plt.title('With approx freq (top: sum, bottom: fft)')
-    plt.plot(l)
-    plt.xlabel('f')
-    plt.ylim([-0.2, 1.2])
-
-    tph = 2*np.pi*ref_freq*t
-    test = 1*np.sin(tph)
-    test = test.reshape((1, sample_nb)).repeat(phase.size, axis=0)
-    test = test
-    asin, acos = sktools.maths.extract_sin_cos(values, fs, ref_freq)
+    b = signal.firwin(70, [6, 14], pass_zero=False, nyq=150/2)
+    w,H = signal.freqz(b)
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(w*fs/2/np.pi, 20*np.log10(abs(H)))
+    plt.subplot(212)
+    plt.plot(w*fs/2/np.pi, np.unwrap(np.angle(H)))
+    values_f = signal.lfilter(b, 1, values, axis=1)
+    ze_func(values_f[:,:Nmax], t[:Nmax], fs, ref_freq, 'with filter')
 
     plt.figure()
-
-    plt.plot(pos, asin, 'p')
-    plt.plot(pos, acos, 'p')
-    plt.title('Extracted test signal (should be 1)')
-
-    p = 2*np.pi*ref_freq*t[:2000]
-
-    for k in range(values.shape[0]):
-        _, a, b = sktools.maths.fit_sin_cos(values[k,:2000], p, False)
-        asin[k] = a
-        acos[k] = b
-
-    plt.figure()
-    plt.plot(pos, acos)
-    plt.plot(pos, asin)
-    plt.legend(['sin', 'cos'])
-    plt.title('INV')
-
-
-    asin, acos = sktools.maths.extract_sin_cos(values[:,:2000], fs, ref_freq)
-
-    plt.figure()
-    plt.plot(pos, acos)
-    plt.plot(pos, asin)
-    plt.legend(['sin', 'cos'])
-    plt.title('sincos')
+    idx = 60
+    plt.plot(t[100:Nmax],values[idx,100:Nmax]-np.mean(values[idx,100:Nmax]))
+    plt.plot(t[100:Nmax],values_f[idx,100:Nmax]-np.mean(values_f[idx,100:Nmax]))
 
 #    # Optimize
 #    step_size = 0.1

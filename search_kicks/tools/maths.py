@@ -195,10 +195,12 @@ def extract_sin_cos(x, fs, f):
 
     """
 
-    w0 = 2*np.pi*f
     M, N = x.shape
+    allowed_freqs = np.arange(N/2)*fs/N
+    f0 = allowed_freqs[np.argmin(np.abs(f-allowed_freqs))]
+    w0 = 2*np.pi*f0
     t = (np.arange(N)/fs).reshape((1, N)).repeat(M, axis=0)
-    y = np.sum(x*np.exp(1j*w0*t), axis=1)*2/N
+    y = np.sum(x*np.exp(-1j*w0*t), axis=1)*2/N
     return y.imag, y.real
 
 
