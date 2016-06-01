@@ -6,9 +6,9 @@ What is used for what?
 ======================
 
 * translateAndreasFile.m
-    In order to be readable by Search_kicks, the matlab data should have a 
-    given shape. This one deals with Andreas' dumps.
+    In order to be readable by Search_kicks, the matlab data should have a
+    given shape. This one deals with Andreas' dumps (they should be like Dennis').
 * translatescript.m
-    A script that takes all files of a given folder and given certain 
+    A script that takes all files of a given folder and given certain
     parameters, change their shape with the `translateAndreasFile` function
 
