@@ -113,10 +113,12 @@ class OrbitData(object):
         sample_nb = check_single_arrays('CMx', CMx, sample_nb)
         sample_nb = check_single_arrays('CMy', CMy, sample_nb)
 
-        if names is not None and type(names) is not dict:
+        if names is None:
+            pass
+        elif type(names) is not dict:
             print("Names should be None or a dictionary: discarded.")
-        elif ('BPMx' not in names or 'BPMy' not in names or
-              'CMx' not in names or 'CMy' not in names):
+        elif ('BPMx' not in names.keys() or 'BPMy' not in names.keys() or
+              'CMx' not in names.keys() or 'CMy' not in names.keys()):
             print("Names should contain BPMx, BPMy, CMx, CMy: discarded.")
         elif (len(names['BPMx']) != BPMx.shape[0] or
               len(names['BPMy']) != BPMy.shape[0] or
@@ -128,9 +130,14 @@ class OrbitData(object):
         self.BPMy = BPMy
         self.CMx = CMx
         self.CMy = CMy
-        self.sampling_frequency = sampling_frequency
+        self.sampling_frequency = float(sampling_frequency)
         self.sample_number = sample_nb
         self.measure_date = measure_date
+        self.time = np.arange(self.sample_number)/self.sampling_frequency
+
+    @property
+    def datetime(self):
+        return self.measure_date + timedelta(seconds=1)*self.time
 
 
 def load_golden_orbit(filename):
