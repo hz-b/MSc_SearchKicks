@@ -11,6 +11,6 @@ __email__ = "olivier.churlaud@helmholtz-berlin.de"
 __status__ = "Developpement"
 
 
-__all__ = ["IO", "maths"]
+__all__ = ["io", "maths"]
 
-from . import IO, maths
+from . import io, maths

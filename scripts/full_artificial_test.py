@@ -80,7 +80,7 @@ if __name__=='__main__':
     namesX = mml.getfamilydata('BPMx', 'CommonNames')
     namesY = mml.getfamilydata('BPMx', 'CommonNames')
 
-    Smat_xx, Smat_yy = sktools.IO.load_Smat(SMAT_FILE)
+    Smat_xx, Smat_yy = sktools.io.load_Smat(SMAT_FILE)
     Smat_xx = Smat_xx[active_bpms, :]
     Smat_yy = Smat_yy[active_bpms, :]
 

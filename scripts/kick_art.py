@@ -45,7 +45,7 @@ def art_main(cidx, plotopt=True):
     namesX = pml.getfamilydata('BPMx', 'CommonNames')
     namesY = pml.getfamilydata('BPMx', 'CommonNames')
 
-    Smat_xx, Smat_yy = sktools.IO.load_Smat(SMAT_FILE)
+    Smat_xx, Smat_yy = sktools.io.load_Smat(SMAT_FILE)
     Smat_xx = Smat_xx[active_bpmsx, :]
     Smat_yy = Smat_yy[active_bpmsy, :]
 
