@@ -249,8 +249,12 @@ def inverse_with_svd(M, nb_values):
 
     """
 
-    U, s, V = np.linalg.svd(M.newbyteorder('='), full_matrices=False)
-    #U, s, V = np.linalg.svd(M, full_matrices=False)
+    try:
+        M = M.newbyteorder('=')
+    except AttributeError:
+        pass
+
+    U, s, V = np.linalg.svd(M, full_matrices=False)
     # S_mat = U * diag(s) * V
     idmax = nb_values
     Sred = np.diag(np.ones(idmax)/s[:idmax])
