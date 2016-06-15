@@ -27,6 +27,7 @@ except:
     from urllib import urlopen, urlencode
 
 import h5py
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io
 
@@ -114,7 +115,7 @@ class OrbitData(object):
         sample_nb = check_single_arrays('CMy', CMy, sample_nb)
 
         if names is None:
-            pass
+            names = {'BPMx': None, 'BPMy': None, 'CMx': None, 'CMy': None}
         elif type(names) is not dict:
             print("Names should be None or a dictionary: discarded.")
         elif ('BPMx' not in names.keys() or 'BPMy' not in names.keys() or
@@ -134,6 +135,48 @@ class OrbitData(object):
         self.sample_number = sample_nb
         self.measure_date = measure_date
         self.time = np.arange(self.sample_number)/self.sampling_frequency
+        self.names = names
+
+    def _plot_single_fft(self, x, i, title, ylabel):
+        N = x.shape[1]
+        freqs = np.fft.fftfreq(N, 1/self.sampling_frequency)[:N//2]
+        X = np.fft.fft(x[i, :])[:N//2]*2/N*10**6
+        X[0] = 0
+        plt.plot(freqs, abs(X))
+        plt.title(title)
+        plt.xlabel('Frequency [in Hz]')
+        plt.ylabel(ylabel)
+        plt.grid()
+
+    def plot_fft(self, which=0, title="", opt=""):
+        if which == 0:
+            which = [0,0,0,0]
+        elif len(which) == 2 and opt == "no_CM":
+            which.extend([0, 0])
+        elif len(which) == 2 and opt == "no_BPM":
+            which = [0, 0].extend(which)
+        elif len(which) != 4:
+            raise ValueError("1st argument (which) must be a list with 4 elements")
+
+        if opt not in ["", "no_CM", "no_BPM"]:
+            raise ValueError("3rd argument (opt) can be 'no_CM', 'no_BPM' or "
+                             "empty, but not {}".format(opt))
+
+        if opt == "":
+            h_nb = 2
+        else:
+            h_nb = 1
+        if opt != "no_BPM":
+            plt.subplot(h_nb, 2, 1)
+            self._plot_single_fft(self.BPMx, which[0], "BPMx", 'Beam motion [in nm]')
+            plt.subplot(h_nb, 2, 2)
+            self._plot_single_fft(self.BPMy, which[1], "BPMy", 'Beam motion [in nm]')
+        if opt != "no_CM":
+            plt.subplot(h_nb, 2, 2*(h_nb-1) + 1)
+            self._plot_single_fft(self.CMx, which[2], "CMx", 'Correction [in uA]')
+            plt.subplot(h_nb, 2, 2*(h_nb-1) + 2)
+            self._plot_single_fft(self.CMy, which[3], "CMy", 'Correction [in uA]')
+            plt.tight_layout()
 
     @property
     def datetime(self):
@@ -212,14 +255,14 @@ def load_orbit_hdf5(filename):
             if '__version__' in f.attrs and f.attrs['__version__'] == '1.0':
                 try:
                     return OrbitData(
-                        BPMx=f['data/BPMx'], BPMy=f['data/BPMy'],
-                        CMx=f['data/CMx'], CMy=f['data/CMy'],
-                        sampling_frequency=f['sampling_frequency'],
+                        BPMx=f['data/BPMx'][:], BPMy=f['data/BPMy'][:],
+                        CMx=f['data/CMx'][:], CMy=f['data/CMy'][:],
+                        sampling_frequency=f['sampling_frequency'][()],
                         measure_date=(f.attrs['measure_date'], DATETIME_ISO),
-                        names={'BPMx': f['names/BPMx'],
-                               'BPMy': f['names/BPMy'],
-                               'CMx': f['names/CMx'],
-                               'CMy': f['names/CMy'],
+                        names={'BPMx': f['names/BPMx'][:],
+                               'BPMy': f['names/BPMy'][:],
+                               'CMx': f['names/CMx'][:],
+                               'CMy': f['names/CMy'][:],
                                },
                         )
                 except:
@@ -239,6 +282,17 @@ def save_orbit_hdf5(filename, obj):
 
     if os.path.splitext(filename) != '.hdf5':
         filename += '.hdf5'
+    
+    if obj.names['BPMx'] is None:
+        names_BPMx = []
+        names_BPMy = []
+        names_CMx = []
+        names_CMy = []
+    else:
+        names_BPMx = obj.names['BPMx']
+        names_BPMy = obj.names['BPMy']
+        names_CMx = obj.names['CMx']
+        names_CMy = obj.names['CMy']
 
     with h5py.File(filename, 'w') as f:
         f.create_dataset('data/BPMx', data=obj.BPMx)
@@ -246,10 +300,10 @@ def save_orbit_hdf5(filename, obj):
         f.create_dataset('data/CMx', data=obj.CMx)
         f.create_dataset('data/CMy', data=obj.CMy)
         f.create_dataset('sampling_frequency', data=obj.sampling_frequency)
-        f.create_dataset('names/BPMx', data=obj.names['BPMx'])
-        f.create_dataset('names/BPMy', data=obj.names['BPMy'])
-        f.create_dataset('names/CMx', data=obj.names['CMx'])
-        f.create_dataset('names/CMy', data=obj.names['CMy'])
+        f.create_dataset('names/BPMx', data=names_BPMx)
+        f.create_dataset('names/BPMy', data=names_BPMy)
+        f.create_dataset('names/CMx', data=names_CMx)
+        f.create_dataset('names/CMy', data=names_CMy)
         f.attrs['data_structure'] = "array[item, time_sample]"
         f.attrs['measure_date'] = obj.measure_date.strftime(DATETIME_ISO)
         f.attrs['creation_date'] = datetime.now().strftime(DATETIME_ISO)
