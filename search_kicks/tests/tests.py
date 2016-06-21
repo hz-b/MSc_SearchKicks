@@ -20,28 +20,15 @@ def test_fit_sine(signal, phase):
 
     offset, amplitude, phase_shift = sktools.maths.fit_sine(signal,
                                                             phase,
-                                                            'sum',
                                                             True,
                                                             True)
 
-    offset2, amplitude2, phase_shift2 = sktools.maths.fit_sine(signal,
-                                                               phase,
-                                                               'inv',
-                                                               True,
-                                                               True)
-    print("'sum'\n"
+    print(""
           "\toffset = {}\n"
           "\tamplitude = {}\n"
           "\tphase_shift = {}".format(offset,
                                       amplitude,
-                                      phase_shift
-                                      ))
-    print("'inv'\n"
-          "\toffset = {}\n"
-          "\tamplitude = {}\n"
-          "\tphase_shift = {}".format(offset2,
-                                      amplitude2,
-                                      phase_shift2
+                                      phase_shift,
                                       ))
 
 def test_fit_sin_cos(signal, phase):
@@ -49,30 +36,17 @@ def test_fit_sin_cos(signal, phase):
     print("Start test for fit_sin_cos()")
     print("==========================")
 
-    offset, amplitude_s, amplitude_c = sktools.maths.fit_sin_cos(signal,
+    offset, amplitude_c, amplitude_s = sktools.maths.fit_sin_cos(signal,
                                                                  phase,
-                                                                 'sum',
                                                                  True,
                                                                  True)
 
-    offset2, amplitude_s2, amplitude_c2 = sktools.maths.fit_sin_cos(signal,
-                                                                    phase,
-                                                                    'inv',
-                                                                    True,
-                                                                    True)
-    print("'sum'\n"
+    print(""
           "\toffset = {}\n"
           "\tamplitude sine = {}\n"
           "\tamplitude cosine = {}".format(offset,
                                             amplitude_s,
                                             amplitude_c
-                                            ))
-    print("'inv'\n"
-          "\toffset = {}\n"
-          "\tamplitude sine = {}\n"
-          "\tamplitude cosine = {}".format(offset2,
-                                            amplitude_s2,
-                                            amplitude_c2
                                             ))
 
 # The created orbit doesn't work, because it must be smooth [closed orbit]
@@ -98,18 +72,18 @@ def test_get_kick():
 
     orbit += 0.1*noise
 
-    kick_found, _ = skcore.get_kick(orbit, phase, tune, True)
+    kick_found, _ = skcore.get_kick(orbit, phase, tune, True, True)
     print("kick set at {}".format(kick/(2*np.pi)))
     print("kick set found at {}".format(kick_found/(2*np.pi)))
 
 if __name__ == "__main__":
     plt.close('all')
-
     phase = 2*np.pi*np.arange(1, 41).T/10
-    signal_clean = 2*np.sin(phase+1.4) + 1
+    signal_clean = 2*np.cos(phase+1.4) + 1
     noise = np.random.random(phase.size)*2 - 1
     signal = signal_clean + noise
 
     test_fit_sine(signal, phase)
     test_fit_sin_cos(signal, phase)
     test_get_kick()
+    plt.show()

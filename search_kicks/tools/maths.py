@@ -11,32 +11,32 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def rotate(sin_amp, cos_amp, phi, deg_rad='rad'):
+def rotate(cos_amp, sin_amp, phi, deg_rad='rad'):
     if deg_rad == 'deg':
         phi = phi*np.pi/180.
     elif deg_rad == 'rad':
         pass
     else:
-        raise ValueError("2nd argument must be 'deg' or 'rad'")
+        raise ValueError("4th argument must be 'deg' or 'rad'")
 
     z = cos_amp + 1j*sin_amp
     z = z * np.exp(1j*phi)
 
-    return z.imag, z.real
+    return z.real, z.imag
 
 
-def optimize_rotation(sin_amp, cos_amp, step_size):
+def optimize_rotation(cos_amp, sin_amp, step_size):
     maxval = 1e10
     angle_opt = 0
     for angle in np.arange(-180, 180, step_size):
-        sin_opt, cos_opt = rotate(sin_amp, cos_amp, angle, 'deg')
+        sin_opt, cos_opt = rotate(cos_amp, sin_amp, angle, 'deg')
         if max(abs(cos_opt)) < maxval:
             maxval = max(abs(cos_opt))
             angle_opt = angle
 
-    sin_opt, cos_opt = rotate(sin_amp, cos_amp, angle_opt, 'deg')
+    cos_opt, sin_opt = rotate(cos_amp, sin_amp, angle_opt, 'deg')
 
-    return sin_opt, cos_opt, angle_opt
+    return cos_opt, sin_opt, angle_opt
 
 
 def fit_sine(signal, phase, offset_opt=True, plot=False):
@@ -44,7 +44,7 @@ def fit_sine(signal, phase, offset_opt=True, plot=False):
 
         The funtion to fit with is
         y = a + b1*cos(d*t) + b2*sin(d*t)
-          = a + b*sin(d*t + c)
+          = a + b*cos(d*t + c)
 
         It internally calls fit_sin_cos(signal, phase, offset_opt, False)
 
@@ -56,7 +56,7 @@ def fit_sine(signal, phase, offset_opt=True, plot=False):
             Argument of the sine. in `a + b*sin(c+d*t)` it would be `d*t`
         offset_opt : bool, optional.
             If False, the fit function is `b*sin(c + phase)`, else it is
-            is `a + b*sin(c + phase)`. Default to True.
+            is `a + b*cos(c + phase)`. Default to True.
         plot : bool, optional.
             If True, plot the signal and the calculated sine together.
             Default to False.
@@ -64,26 +64,26 @@ def fit_sine(signal, phase, offset_opt=True, plot=False):
         Returns
         -------
         offset : float
-            The `a` in `a + b*sin(c + phase)`. If offset_opt is False, it is 0.
+            The `a` in `a + b*cos(c + phase)`. If offset_opt is False, it is 0.
         amplitude : float
-            The `b` in `a + b*sin(c + phase)`.
+            The `b` in `a + b*cos(c + phase)`.
         phase_shift : float
-            The `c` in `a + b*sin(c + phase)`.
+            The `c` in `a + b*cos(c + phase)`.
 
     """
 
     if not np.isscalar(offset_opt) or not np.isscalar(plot):
-        raise TypeError('Arguments 4 and 5 must be booleans')
+        raise TypeError('Arguments 3 and 4 must be booleans')
 
-    offset, amp_sin, amp_cos = fit_sin_cos(signal, phase, offset_opt, False)
+    offset, amp_cos, amp_sin = fit_sin_cos(signal, phase, offset_opt, False)
 
-    amplitude = np.linalg.norm([amp_sin, amp_cos])
+    amplitude = np.linalg.norm([amp_cos, amp_sin])
     # atan2 keeps the information of the sign of the b1 and b2
-    phase_shift = atan2(amp_cos, amp_sin)
+    phase_shift = -atan2(amp_sin, amp_cos)
 
     if plot:
         plt.figure()
-        y = offset + amplitude*np.sin(phase + phase_shift)
+        y = offset + amplitude*np.cos(phase + phase_shift)
         plt.plot(phase, signal, '+r')
         plt.plot(phase, y, '-b')
 
@@ -102,26 +102,26 @@ def fit_sin_cos(signal, phase, offset_opt=True, plot=False):
 
         Parameters
         ----------
-        signal : np.array
+        signal: np.array
             Signal to be approximated.
-        phase : np.array
-            Argument of the sine. in `a + b*sin(c+d*t)` it would be `d*t`
-        offset_opt : bool, optional.
-            If False, the fit function is `b*sin(c + phase)`, else it is
-            is `a + b*sin(c + phase)`. Default to True.
-        plot : bool, optional.
+        phase: np.array
+            Argument of the sine. in `a + b*cos(c+d*t)` it would be `d*t`
+        offset_opt: bool, optional.
+            If False, the fit function is `b*cos(c + phase)`, else it is
+            is `a + b*cos(c + phase)`. Default to True.
+        plot: bool, optional.
             If True, plot the signal and the calculated sine together.
             Default to False.
 
         Returns
         -------
-        offset : float
+        offset: float
             The `a` in `a + b1*sin(phase) + b2*cos(phase)`.
             If offset_opt is False, it is 0.
-        amp_sin : float
-            The `b1` in `a + b1*sin(phase) + b2*cos(phase)`.
-        amp_cos : float
-            The `b2` in `a + b1*sin(phase) + b2*cos(phase)`.
+        amp_cos: float
+            The `b1` in `a + b1*cos(phase) + b2*sin(phase)`.
+        amp_sin: float
+            The `b2` in `a + b1*cos(phase) + b2*sin(phase)`.
 
     """
 
@@ -153,46 +153,62 @@ def fit_sin_cos(signal, phase, offset_opt=True, plot=False):
 
     # Solve the system equation
     eq_matrix = np.concatenate(
-        (constant, np.sin(phase), np.cos(phase)),
+        (constant, np.cos(phase), np.sin(phase)),
         1
         )
 
     abc, residual, _, _ = np.linalg.lstsq(eq_matrix, signal)
     offset = abc[0, 0]
-    amp_sin = abc[1, 0]
-    amp_cos = abc[2, 0]
+    amp_cos = abc[1, 0]
+    amp_sin = abc[2, 0]
 
     if plot:
         plt.figure()
-        y = offset + amp_sin*np.sin(phase) + amp_cos*np.cos(phase)
+        y = offset + amp_cos*np.cos(phase) + amp_sin*np.sin(phase)
         plt.plot(phase, signal, '+r')
         plt.plot(phase, y, '-b')
 
         plt.grid(True)
 
-    return offset, amp_sin, amp_cos
+    return offset, amp_cos, amp_sin
 
 
-def extract_sin_cos(x, fs, f):
+def extract_sin_cos(x, fs, f, output_format='cartesian'):
     """ Approximate the time signals by a funtion of type:
-        `f(t) = a*sin(f*t) + b*cos(f*t)`.
+        `f(t) = a*cos(f*t) + b*sin(f*t)`.
 
         Parameters
         ----------
-        x : np.array (nb_bpm x nb_time_samples)
+        x: np.array (nb_bpm x nb_time_samples)
             Each line is the signal of a given BPM.
-        fs : float
+        fs: float
             Sampling frequency.
-        f : float
+        f: float
             Frequency to extract.
+        output_format: string, optional, default to 'cartesian'.
+            In which format the result should be output:
+            'complex', 'cartesian' or 'polar'
 
         Returns
         -------
-        amp_sin : list
-            Sinus amplitude for each BPM (list of all `a`, nb_bpm elements).
-        am_cos : list
+        If 'cartesian':
+
+        amp_cos: list
+            Cosinus amplitude for each BPM (list of all `a`, nb_bpm elements).
+        amp_sin: list
             Sinus amplitude for each BPM (list of all `b`, nb_bpm elements).
 
+        If 'complex':
+
+        value: list
+            Complex amplitude for each BPM (`a + 1j*b`)
+
+        If 'polar':
+
+        amplitudes: list
+            Amplitude for each BPM (`abs(a + j*b)`)
+        phases: list
+            Phases for each BPM (`angle(a + j*b)`)
     """
 
     M, N = x.shape
@@ -201,7 +217,16 @@ def extract_sin_cos(x, fs, f):
     w0 = 2*np.pi*f0
     t = (np.arange(N)/fs).reshape((1, N)).repeat(M, axis=0)
     y = np.sum(x*np.exp(-1j*w0*t), axis=1)*2/N
-    return y.imag, y.real
+
+    if output_format == 'complex':
+        return y
+    elif output_format == 'cartesian':
+        return y.real, y.imag
+    elif output_format == 'polar':
+        return np.abs(y), np.angle(y)
+    else:
+        print("Output format not understood fallback to default: 'cartesian'")
+        return y.real, y.imag
 
 
 def klt(inputs):
@@ -209,12 +234,12 @@ def klt(inputs):
 
         Parameters
         ----------
-        input : np.array (signal_length x nb of dimensions)
+        input: np.array (signal_length x nb of dimensions)
             Each column represents a dimension of the signal.
 
         Returns
         -------
-        output : np.array (signal_length x nb of dimensions)
+        output: np.array (signal_length x nb of dimensions)
             Each column represents a dimension of the signal.
 
     """
@@ -237,14 +262,14 @@ def inverse_with_svd(M, nb_values):
 
         Parameters
         ----------
-        M : np.array (m x n)
+        M: np.array (m x n)
             Matrix to compute
-        nb_values : integer
+        nb_values: integer
             Number of eigenvalue to keep in the computation
 
         Returns
         -------
-        M_inv : np.array (n x m)
+        M_inv: np.array (n x m)
             Pseudo inverse of M
 
     """

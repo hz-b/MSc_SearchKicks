@@ -35,8 +35,8 @@ def build_sine(kick_phase, tune, sin_coefficients, phase=None):
     b = sin_coefficients[0]
     c = sin_coefficients[1]
 
-    sine_tmp = np.concatenate((b*np.sin(phase_tmp + kick_phase + c),
-                               b*np.sin(phase_tmp + kick_phase + c)))
+    cos_tmp = np.concatenate((b*np.cos(phase_tmp + kick_phase + c),
+                              b*np.cos(phase_tmp + kick_phase + c)))
 
     phase_exp = np.concatenate((phase_tmp-2*np.pi*tune,
                                 phase_tmp))+kick_phase
@@ -44,6 +44,6 @@ def build_sine(kick_phase, tune, sin_coefficients, phase=None):
     valid_ids = np.logical_and(phase_exp >= 0, phase_exp <= tune*2*np.pi)
 
     phase_th = phase_exp[valid_ids]
-    sine_signal = sine_tmp[valid_ids]
+    cos_signal = cos_tmp[valid_ids]
 
-    return sine_signal, phase_th
+    return cos_signal, phase_th

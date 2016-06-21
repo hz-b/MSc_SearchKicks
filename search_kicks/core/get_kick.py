@@ -3,7 +3,7 @@
 from __future__ import division, print_function
 
 import numpy as np
-from numpy import sin, pi
+from numpy import cos, pi
 import matplotlib.pyplot as plt
 
 from search_kicks.tools.maths import fit_sine
@@ -29,14 +29,14 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
         -------
         kick_phase : float
             The phase where the kick was found.
-        sin_coefficients : [a, b]
-            a and b so that the sine is a*sin(b+phase)
+        cos_coefficients : [a, b]
+            a and b so that the sine is a*cos(b+phase)
 
     """
     bpm_nb = orbit.size
     rms_tab = []
     best_rms = 0
-    sin_coefficients = []
+    cos_coefficients = []
 
     # duplicate the signal to find the sine between the kick and its duplicate
     signal_exp = np.concatenate((orbit, orbit))
@@ -48,9 +48,9 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
         signal_t = signal_exp[i:i+bpm_nb]
         phase_t = phase_exp[i:i+bpm_nb]
         _, b, c = fit_sine(signal_t, phase_t, False)
-        sin_coefficients.append([b, c])
+        cos_coefficients.append([b, c])
 
-        y = b*sin(c + phase_t)
+        y = b*cos(c + phase_t)
 
         # calculate the RMS. the best fit means that the kick is around
         # the ith BPMs
@@ -60,17 +60,17 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
             best_rms = rms
             i_best = i
 
-    b, c = sin_coefficients[i_best]
+    b, c = cos_coefficients[i_best]
     apriori_phase = phase[i_best]
-    k = int((apriori_phase + c)/np.pi + (tune-1/2))
-    solutions = (1/2 - tune) * np.pi - c + np.array([k, k+1])*np.pi
+    k = int((apriori_phase + c)/np.pi + tune)
+    solutions = -c - np.pi*tune + np.array([k, k+1])*np.pi
     idx = np.argmin(abs(solutions - apriori_phase))
     kick_phase = solutions[idx]
 
     if error_curves:
         transl = bpm_nb//2 - i_best
         rms_tab = np.roll(rms_tab, transl)
-        sin_coef_tmp = np.array(np.roll(sin_coefficients, transl))
+        cos_coef_tmp = np.array(np.roll(cos_coefficients, transl))
 
         offset = 2*pi
         n_lspace = 10000
@@ -84,8 +84,8 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
         plt.title('1- Sine Fit')
         idx_range = range(-len(rms_tab)//2, len(rms_tab)//2)
         plt.plot(idx_range, rms_tab)
-        plt.plot(idx_range, sin_coef_tmp[:, 0]*100)
-        plt.plot(idx_range, -sin_coef_tmp[:, 1]*1000/(2*pi))
+        plt.plot(idx_range, cos_coef_tmp[:, 0]*100)
+        plt.plot(idx_range, -cos_coef_tmp[:, 1]*1000/(2*pi))
         plt.legend(['RMS',
                     r'Amplitude $\times 100$',
                     r'Phase $\times (-1000 / 2\pi)$'
@@ -98,7 +98,7 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
         plt.subplot(212)
         plt.title('2- Find kick')
         plt.plot(interval_rel,
-                 abs(b*sin(interval + c) - b*sin(interval+c+2*pi*tune)))
+                 abs(b*cos(interval + c) - b*cos(interval+c+2*pi*tune)))
         tick_vals = []
         tick_labels = []
         amp_max = int(offset // pi)
@@ -127,10 +127,10 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
         plt.plot(phase/(2*pi), orbit, '+')
         sine_signal, phase_th = build_sine(kick_phase,
                                            tune,
-                                           sin_coefficients[i_best % bpm_nb]
+                                           cos_coefficients[i_best % bpm_nb]
                                            )
         plt.plot(phase_th/(2*pi), sine_signal)
         plt.axvline(kick_phase/(2*pi), -2, 2)
         plt.xlabel(r'phase / $2 \pi$')
         plt.legend(['Real orbit', 'Reconstructed sine'])
-    return kick_phase, sin_coefficients[i_best % bpm_nb]
+    return kick_phase, cos_coefficients[i_best % bpm_nb]

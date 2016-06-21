@@ -40,12 +40,12 @@ def do_get_kick(A, B, phase, tune, pos):
     plt.subplot(2, 1, 1)
     plt.plot(pos, A, '-g')
     plt.axvline(pos[kik1], -2, 2)
-    plt.title('sine')
+    plt.title('cosine')
 
     plt.subplot(2, 1, 2)
     plt.plot(pos, B, '-g')
     plt.axvline(pos[kik2], -2, 2)
-    plt.title('cosine')
+    plt.title('sine')
 
     return kik1, kik2
 
@@ -113,41 +113,41 @@ if __name__=='__main__':
         BPMx_t[i,:] = BPMx[i]*np.sin(F*2*np.pi*t+PHASE)
     t2 = toc(t1, "Harmonic disturb init")
 
-    A, B = sktools.maths.extract_sin_cos(BPMx_t, FS, F)
+    A = sktools.maths.extract_sin_cos(BPMx_t, FS, F, 'complex')
     t2 = toc(t2, "Harmonic disturb, sum")
 
-    plt.figure("sin/cos")
-    plt.plot(sx, A)
-    plt.plot(sx, B)
-    plt.legend(['sin','cos'])
+    plt.figure("cos/sin")
+    plt.plot(sx, A.real)
+    plt.plot(sx, A.imag)
+    plt.legend(['cos','sin'])
 
     phase = phases_mat['PhaseX'][:, 0]
 
-    kick1b, kick2b = do_get_kick(A, B, phase, tuneX, sx)
+    kick1b, kick2b = do_get_kick(A.real, A.imag, phase, tuneX, sx)
     idkick = np.argmin(abs(phaseX-kick1b))
 
     print(sx[idkick], cx[SOURCE_DISTURB])
 
     t1 = toc(t1, "Harmonic disturb")
 ##### KLT VS ROTATION #######
-    a = np.array([A, B])
+    a = np.array([A.real, A.imag])
 
     [A_klt, B_klt] = sktools.maths.klt(a)
 
     step_size = 0.1
-    A_opt, B_opt, _ = sktools.maths.optimize_rotation(A, B, step_size)
+    A_opt, B_opt, _ = sktools.maths.optimize_rotation(A.real, A.imag, step_size)
 
     plt.figure("Optimization")
     plt.subplot(2,1,1)
     plt.plot(sx, A_klt)
     plt.plot(sx, B_klt)
-    plt.legend(['sin','cos'])
+    plt.legend(['cos','sin'])
     plt.title('KLT')
 
     plt.subplot(2,1,2)
     plt.plot(sx, A_opt)
     plt.plot(sx, B_opt)
-    plt.legend(['sin','cos'])
+    plt.legend(['cos','sin'])
     plt.title('Rotations')
 
     t1 = toc(t1, "KLT/Rotat")

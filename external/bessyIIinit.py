@@ -133,7 +133,7 @@ bpm= [
 ['BPMZ41D1R',	'BPMZ41D1R:rdX', 0 ,'BPMZ41D1R', 'BPMZ41D1R:rdY', 0, [1,5],	238.215 , 8    , 1   , 1   , 126 ],
 ['BPMZ42D1R',	'BPMZ42D1R:rdX', 0 ,'BPMZ42D1R', 'BPMZ42D1R:rdY', 0, [1,6],	238.418 , 128  , 1   , 1   , 127 ],
 ];
-bpm = map(list,zip(*bpm))
+bpm = list(map(list, zip(*bpm)))
 ao['BPMx'] = {}
 ao['BPMy'] = {}
 ao['BPMx']['CommonNames']                    = np.array(bpm[0])
@@ -207,7 +207,7 @@ bend=[
 ['BM2T8R', 'BPR:rdbk    ' , 'BPR:set    ' , 1 ,[ 2,18], 33,  cb      , 229.755 ],
 ['BM1D1R', 'BPR:rdbk    ' , 'BPR:set    ' , 1 ,[ 1, 1], 34,  cb      , 234.39  ],
 ]
-bend = map(list,zip(*bend))
+bend = list(map(list,zip(*bend)))
 ao['BEND'] = {}
 ao['BEND']['CommonNames']              = np.array(bend[0])
 ao['BEND']['Status']                   = np.array(bend[3])
@@ -313,7 +313,7 @@ hcm=[
 ['HBM1D1R ', 'HBP1D1R:rdbk ', 'HBP1D1R:set ', 0, [ 1, 2], 78, 234.39   ,hbm, ihbm	,hcm_b_type ,00],
 ['HS4M1D1R', 'HS4P1D1R:rdbk', 'HS4P1D1R:set', 1, [ 1, 3], 79, 237.034  ,hs4, ihs	,hcm_s4_type,48],
 ]
-hcm = map(list,zip(*hcm))
+hcm = list(map(list,zip(*hcm)))
 ao['HCM'] = {}
 ao['HCM']['CommonNames']                 = np.array(hcm[0])
 ao['HCM']['Status']                      = np.array(hcm[3])
@@ -410,7 +410,7 @@ vcm = [
 ['VS3M1D1R', 'VS3P1D1R:rdbk', 'VS3P1D1R:set', 1, [ 1, 2],  69, 236.068  ,vs3  , ivs   , vcm_s3_type,112],
 ]
 
-vcm = map(list,zip(*vcm))
+vcm = list(map(list,zip(*vcm)))
 ao['VCM'] = {}
 ao['VCM']['CommonNames']              = np.array(vcm[0])
 ao['VCM']['Status']                   = np.array(vcm[3])
@@ -445,7 +445,7 @@ cqs=[
 ['CQS3M1T7R', 'CQS3P1T7R:rdbk', 'CQS3P1T7R:set', 1, [14, 1],13 ,191.068,0.188],
 ['CQS3M2T7R', 'CQS3P2T7R:rdbk', 'CQS3P2T7R:set', 1, [14, 2],14 ,198.772,0.188],
 ]
-cqs = map(list,zip(*cqs))
+cqs = list(map(list,zip(*cqs)))
 ao['CQS'] = {}
 ao['CQS']['CommonNames']              = np.array(cqs[0])
 ao['CQS']['Status']                   = np.array(cqs[3])
@@ -497,7 +497,7 @@ quad1=[
 ['Q1M2T8R',     'Q1PTR:rdbk',   'Q1PTR:set',    0,      [16, 2],        30, 231.985],
 ['Q1M1D1R',     'Q1PDR:rdbk',   'Q1PDR:set',    0,      [ 1, 1],        31, 232.765],
 ]
-quad1 = map(list,zip(*quad1))
+quad1 = list(map(list,zip(*quad1)))
 ao['Q1'] = {}
 ao['Q1']['CommonNames']              = np.array(quad1[0])
 ao['Q1']['Status']                   = np.array(quad1[3])
@@ -548,7 +548,7 @@ quad2=[
 ['Q2M2T8R', 'Q2PTR:rdbk', 'Q2PTR:set', 1, [16, 2], 30, 231.03 ,cq2t],
 ['Q2M1D1R', 'Q2PDR:rdbk', 'Q2PDR:set', 1, [ 1, 1], 31, 233.77 ,cq2d],
 ]
-quad2 = map(list,zip(*quad2))
+quad2 = list(map(list,zip(*quad2)))
 ao['Q2'] = {}
 ao['Q2']['CommonNames']              = np.array(quad2[0])
 ao['Q2']['Status']                   = np.array(quad2[3])
@@ -600,7 +600,7 @@ quad3=[
 ['Q3M2T8R', 'Q3P2T8R:rdbk', 'Q3P2T8R:set', 1, [16, 2], 30, 229.085   , cq3t],
 ['Q3M1D1R', 'Q3PD1R:rdbk ', 'Q3PD1R:set ', 1, [ 1, 1], 31, 235.665   , cq3d],
 ]
-quad3 = map(list,zip(*quad3))
+quad3 = list(map(list,zip(*quad3)))
 ao['Q3'] = {}
 ao['Q3']['CommonNames']              = np.array(quad3[0])
 ao['Q3']['Status']                   = np.array(quad3[3])
@@ -651,7 +651,7 @@ quad4=[
 ['Q4M2T8R', 'Q4P2T8R:rdbk', 'Q4P2T8R:set', 1, [16, 2],  30, 228.119, cq4t],
 ['Q4M1D1R', 'Q4PD1R:rdbk ', 'Q4PD1R:set ', 1, [ 1, 1],  31, 236.381, cq4d],
 ]
-quad4 = map(list,zip(*quad4))
+quad4 = list(map(list,zip(*quad4)))
 ao['Q4'] = {}
 ao['Q4']['CommonNames']              = np.array(quad4[0])
 ao['Q4']['Status']                   = np.array(quad4[3])
@@ -685,7 +685,7 @@ quad5=[
 ['Q5M1T8R', 'Q5P1T8R:rdbk', 'Q5P1T8R:set', 1, [16, 2], 14, 222.347  , cq5 ],
 ['Q5M2T8R', 'Q5P2T8R:rdbk', 'Q5P2T8R:set', 1, [16, 1], 15, 227.453  , cq5 ],
 ]
-quad5 = map(list,zip(*quad5))
+quad5 = list(map(list,zip(*quad5)))
 ao['Q5'] = {}
 ao['Q5']['CommonNames']             = np.array(quad5[0])
 ao['Q5']['Status']                   = np.array(quad5[3])
@@ -717,9 +717,9 @@ sext1=[
 ['S1MT7R ', 'S1PR:rdbk', 'S1PR:set', 1, [14, 1],12,187.395 , cs1],
 ['S1MD8R ', 'S1PR:rdbk', 'S1PR:set', 1, [15, 1],13,202.395 , cs1],
 ['S1MT8R ', 'S1PR:rdbk', 'S1PR:set', 1, [16, 1],14,217.395 , cs1],
-['S1MD1R ', 'S1PR:rdbk', 'S1PR:set', 1, [01, 1],15,232.395 , cs1],
+['S1MD1R ', 'S1PR:rdbk', 'S1PR:set', 1, [ 1, 1],15,232.395 , cs1],
 ]
-sext1 = map(list,zip(*sext1))
+sext1 = list(map(list,zip(*sext1)))
 ao['S1'] = {}
 ao['S1']['CommonNames']              = np.array(sext1[0])
 ao['S1']['Status']                   = np.array(sext1[3])
@@ -767,9 +767,9 @@ sext2=[
 ['S2M2D8R', 'S2PDR:rdbk',  'S2PDR:set', 1, [15, 2],28,216.537 ,cs2],
 ['S2M1T8R', 'S2PTR:rdbk',  'S2PTR:set', 1, [16, 1],29,218.303 ,cs2],
 ['S2M2T8R', 'S2PTR:rdbk',  'S2PTR:set', 1, [16, 2],30,231.537 ,cs2],
-['S2M1D1R', 'S2PDR:rdbk',  'S2PDR:set', 1, [01, 1],31,233.303 ,cs2],
+['S2M1D1R', 'S2PDR:rdbk',  'S2PDR:set', 1, [ 1, 1],31,233.303 ,cs2],
 ]
-sext2 = map(list,zip(*sext2))
+sext2 = list(map(list,zip(*sext2)))
 ao['S2'] = {}
 ao['S2']['CommonNames']              = np.array(sext2[0])
 ao['S2']['Status']                   = np.array(sext2[3])
@@ -820,7 +820,7 @@ sext3=[
 ['S3M2T8R', 'S3PTR:rdbk ', 'S3PTR:set ', 1, [16, 2],30,228.772 ,cs3t],
 ['S3M1D1R', 'S3PD1R:rdbk', 'S3PD1R:set', 1, [ 1, 1],31,236.068 ,cs3d],
 ]
-sext3 = map(list,zip(*sext3))
+sext3 = list(map(list,zip(*sext3)))
 ao['S3'] = {}
 ao['S3']['CommonNames']              = np.array(sext3[0])
 ao['S3']['Status']                   = np.array(sext3[3])
@@ -871,7 +871,7 @@ sext4=[
 ['S4M2T8R', 'S4PTR:rdbk ', 'S4PTR:set ', 1, [16, 2],30,227.806 ,cs4t],
 ['S4M1D1R', 'S4PD1R:rdbk', 'S4PD1R:set', 1, [ 1, 1],31,237.034 ,cs4d],
 ]
-sext4 = map(list,zip(*sext4))
+sext4 = list(map(list,zip(*sext4)))
 ao['S4'] = {}
 ao['S4']['CommonNames']              = np.array(sext4[0])
 ao['S4']['Status']                   = np.array(sext4[3])

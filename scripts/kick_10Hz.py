@@ -41,7 +41,7 @@ def parse_frames(messages):
     for count, message in enumerate(messages):
         valuesX[:, count] = np.fromstring(message[2], dtype='double')
         valuesY[:, count] = np.fromstring(message[3], dtype='double')
-        
+
     return valuesX, valuesY
 
 if __name__=='__main__':
@@ -76,7 +76,7 @@ if __name__=='__main__':
     zclient.connect("tcp://gofbz12c.ctl.bessy.de:5563")
     zclient.subscribe(['FOFB-BPM-DATA'])
     messages = zclient.receive(SAMPLE_NB)
-   
+
     valuesX, valuesY = parse_frames(messages)
 
     phases_mat = scipy.io.loadmat(PHASE_FILE)
@@ -101,7 +101,7 @@ if __name__=='__main__':
     sample_nb = values.shape[1]
 
     # Extract sin cos
-    asin, acos = sktools.maths.extract_sin_cos(values, fs, ref_freq, 'fft')
+    asin, acos = sktools.maths.extract_sin_cos(values, fs, ref_freq)
 
     plt.figure("sin/cos")
     plt.plot(pos, asin)
@@ -142,7 +142,7 @@ if __name__=='__main__':
     plt.subplot(2, 1, 1)
     plt.plot(corr)
     plt.title('Correctors for f = {} Hz'.format(ref_freq))
-    
+
 
     plt.subplot(2, 1, 2)
     plt.plot(pos, asin_opt, '-g')
@@ -156,7 +156,7 @@ if __name__=='__main__':
     plt.subplot(2, 1, 1)
     plt.plot(corr_cos)
     plt.title('Correctors for f = {} Hz [cos]'.format(ref_freq))
-    
+
 
     plt.subplot(2, 1, 2)
     plt.plot(pos, acos_opt, '-g')

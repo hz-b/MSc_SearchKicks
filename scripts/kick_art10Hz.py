@@ -7,7 +7,8 @@ import os, sys
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io
-from scipy import signal, optimize
+import scipy.signal as signal
+import scipy.optimize as optimize
 
 import PyML
 __my_dir = os.path.dirname(os.path.realpath(__file__))
@@ -35,12 +36,12 @@ def ze_func(values, t, fs, ref_freq, title):
     def func(t, a, b, c, f):
         return a + b*np.cos(2*np.pi*f*t)+c*np.sin(2*np.pi*f*t)
 
-    asin, acos = sktools.maths.extract_sin_cos(values, fs, ref_freq)
+    a = sktools.maths.extract_sin_cos(values, fs, ref_freq, 'complex')
     plt.figure()
     plt.subplot(211)
     plt.title(title)
-    plt.plot(pos, asin)
-    plt.plot(pos, acos)
+    plt.plot(pos, a.real)
+    plt.plot(pos, a.imag)
     plt.legend(['sin', 'cos'])
 
     N = values.shape[0]
@@ -52,13 +53,13 @@ def ze_func(values, t, fs, ref_freq, title):
         y = values[idx,:]
         res, _ \
             = optimize.curve_fit(func, t, y,
-                                 [np.mean(y), acos[idx], asin[idx], ref_freq])
+                                 [np.mean(y), a.real[idx], a.imag[idx], ref_freq])
 
         [offs[idx], ampc[idx], amps[idx], freq[idx]] = res
 
     plt.subplot(212)
-    plt.plot(pos, amps)
     plt.plot(pos, ampc)
+    plt.plot(pos, amps)
     plt.legend(['sin', 'cos'])
 
 if __name__ == '__main__':
@@ -79,9 +80,9 @@ if __name__ == '__main__':
     sy = pml.getfamilydata('BPMy', 'Pos')
 
     namesX = pml.getfamilydata('BPMx', 'CommonNames')
-    namesY = pml.getfamilydata('BPMx', 'CommonNames')
+    namesY = pml.getfamilydata('BPMy', 'CommonNames')
 
-    Smat_xx, Smat_yy = sktools.IO.load_Smat(SMAT_FILE)
+    Smat_xx, Smat_yy = sktools.io.load_Smat(SMAT_FILE)
     Smat_xx = Smat_xx[active_bpmsx, :]
     Smat_yy = Smat_yy[active_bpmsy, :]
 
@@ -91,7 +92,8 @@ if __name__ == '__main__':
     #offsetx = pml.getfamilydata('BPMx','Offset',None,idx)
     #offsety = pml.getfamilydata('BPMy','Offset',None,idy)
 
-    valuesX, valuesY, _,_, names, fs = sktools.IO.load_timeanalys(DATA_FILE)
+    orbit = sktools.io.load_orbit_dump(DATA_FILE)
+    valuesX, valuesY, names, fs = [orbit.BPMx, orbit.BPMy, orbit.names, orbit.sampling_frequency]
     phases_mat = scipy.io.loadmat(PHASE_FILE)
     phaseX = phases_mat['PhaseX'][:, 0]
     phaseY = phases_mat['PhaseZ'][:, 0]
@@ -110,8 +112,6 @@ if __name__ == '__main__':
         tune = tuneX
         values = valuesX[active_bpmsx, :]
         names = namesX
-
-
 
     sample_nb = values.shape[1]
     Nmax = sample_nb
