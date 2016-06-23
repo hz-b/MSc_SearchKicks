@@ -7,7 +7,7 @@ import sys
 import os
 
 __my_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(__my_dir+"/../..")
+sys.path.insert(0, __my_dir+"/..")
 
 import search_kicks.core as skcore
 import search_kicks.tools as sktools
@@ -49,6 +49,23 @@ def test_fit_sin_cos(signal, phase):
                                             amplitude_c
                                             ))
 
+def test_extract_fit_sin_cos(signal, fs, f, a, b):
+    print("\n==========================")
+    print("Start test for extract_sin_cos()")
+    print("==========================")
+
+    signal = signal.reshape((1, signal.size))
+    ampc, amps = sktools.maths.extract_sin_cos(signal, fs, f)
+    amp, p = sktools.maths.extract_sin_cos(signal, fs, f, 'polar')
+
+    print("\ta = {}, instead of {}\n"
+          "\tb = {}, instead of {}\n".format(ampc, a, amps, b))
+
+    print("\tamp = {}, instead of {}\n"
+          "\tphase = {}, instead of {}\n".format(amp, np.abs(a+1j*b),
+                                                 p, -np.angle(a+1j*b)))
+
+
 # The created orbit doesn't work, because it must be smooth [closed orbit]
 def test_get_kick():
     print("\n=========================")
@@ -76,6 +93,7 @@ def test_get_kick():
     print("kick set at {}".format(kick/(2*np.pi)))
     print("kick set found at {}".format(kick_found/(2*np.pi)))
 
+
 if __name__ == "__main__":
     plt.close('all')
     phase = 2*np.pi*np.arange(1, 41).T/10
@@ -83,7 +101,15 @@ if __name__ == "__main__":
     noise = np.random.random(phase.size)*2 - 1
     signal = signal_clean + noise
 
+    f = 10
+    fs = 150
+    t = np.arange(100)/fs
+    a = 213
+    b = 512
+    x = a*np.cos(2*np.pi*f*t)+b*np.sin(2*np.pi*f*t)
+
     test_fit_sine(signal, phase)
     test_fit_sin_cos(signal, phase)
+    test_extract_fit_sin_cos(x, fs, f, a, b)
     test_get_kick()
     plt.show()

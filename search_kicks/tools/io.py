@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from __future__ import division, print_function, unicode_literals
 """
 IO Module
 =========
@@ -149,12 +150,15 @@ class OrbitData(object):
         plt.grid()
 
     def plot_fft(self, which=0, title="", opt=""):
-        if which == 0:
-            which = [0,0,0,0]
-        elif len(which) == 2 and opt == "no_CM":
-            which.extend([0, 0])
-        elif len(which) == 2 and opt == "no_BPM":
-            which = [0, 0].extend(which)
+        if type(which) == int:
+            which = [which, which, which, which]
+        elif len(which) == 2:
+            if opt == "no_CM":
+                which.extend([0, 0])
+            elif opt == "no_BPM":
+                which = [0, 0].extend(which)
+            else:
+                which = [which[0], which[1], which[0], which[1]]
         elif len(which) != 4:
             raise ValueError("1st argument (which) must be a list with 4 elements")
 
@@ -252,7 +256,8 @@ def load_orbit_hdf5(filename):
 
     try:
         with h5py.File(filename, 'r') as f:
-            if '__version__' in f.attrs and f.attrs['__version__'] == '1.0':
+            if ('__version__' in f.attrs and
+                    f.attrs['__version__'].decode('utf8') == '1.0'):
                 try:
                     return OrbitData(
                         BPMx=f['data/BPMx'][:], BPMy=f['data/BPMy'][:],
@@ -270,7 +275,8 @@ def load_orbit_hdf5(filename):
             else:
                 raise NotImplementedError("The version {} is unknown to me, "
                                           "maybe you should teach it to me?"
-                                          .format(f.attrs['__version__']))
+                                          .format(f.attrs['__version__']
+                                                   .decode('utf8')))
     except Exception:
         raise
 
@@ -282,7 +288,7 @@ def save_orbit_hdf5(filename, obj):
 
     if os.path.splitext(filename) != '.hdf5':
         filename += '.hdf5'
-    
+
     if obj.names['BPMx'] is None:
         names_BPMx = []
         names_BPMy = []

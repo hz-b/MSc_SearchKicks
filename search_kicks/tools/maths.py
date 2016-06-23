@@ -9,6 +9,7 @@ from __future__ import division, print_function
 from math import atan2
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.optimize as optimize
 
 
 def rotate(cos_amp, sin_amp, phi, deg_rad='rad'):
@@ -82,7 +83,8 @@ def fit_sine(signal, phase, offset_opt=True, plot=False):
     phase_shift = -atan2(amp_sin, amp_cos)
 
     if plot:
-        plt.figure()
+        plt.figure('sktools::maths::fit_sine [{}]'
+                   .format(len(plt.get_fignums())))
         y = offset + amplitude*np.cos(phase + phase_shift)
         plt.plot(phase, signal, '+r')
         plt.plot(phase, y, '-b')
@@ -163,7 +165,8 @@ def fit_sin_cos(signal, phase, offset_opt=True, plot=False):
     amp_sin = abc[2, 0]
 
     if plot:
-        plt.figure()
+        plt.figure('sktools::maths::fit_sin_cos [{}]'
+                   .format(len(plt.get_fignums())))
         y = offset + amp_cos*np.cos(phase) + amp_sin*np.sin(phase)
         plt.plot(phase, signal, '+r')
         plt.plot(phase, y, '-b')
@@ -187,7 +190,7 @@ def extract_sin_cos(x, fs, f, output_format='cartesian'):
             Frequency to extract.
         output_format: string, optional, default to 'cartesian'.
             In which format the result should be output:
-            'complex', 'cartesian' or 'polar'
+            'cartesian' or 'polar'
 
         Returns
         -------
@@ -211,6 +214,9 @@ def extract_sin_cos(x, fs, f, output_format='cartesian'):
             Phases for each BPM (`angle(a + j*b)`)
     """
 
+    def func(t, a, b, c, f):
+        return a + b*np.cos(2*np.pi*f*t)+c*np.sin(2*np.pi*f*t)
+
     M, N = x.shape
     allowed_freqs = np.arange(N/2)*fs/N
     f0 = allowed_freqs[np.argmin(np.abs(f-allowed_freqs))]
@@ -218,15 +224,22 @@ def extract_sin_cos(x, fs, f, output_format='cartesian'):
     t = (np.arange(N)/fs).reshape((1, N)).repeat(M, axis=0)
     y = np.sum(x*np.exp(-1j*w0*t), axis=1)*2/N
 
-    if output_format == 'complex':
-        return y
-    elif output_format == 'cartesian':
-        return y.real, y.imag
-    elif output_format == 'polar':
-        return np.abs(y), np.angle(y)
-    else:
+    ampc = np.zeros(M)
+    amps = np.zeros(M)
+
+    for k in range(M):
+        res, _ = optimize.curve_fit(func, t[k, :], x[k, :],
+                                    [np.mean(x[k, :]), y.real[k], -y.imag[k], f])
+
+        [_, ampc[k], amps[k], _] = res
+
+    if output_format not in ['cartesian', 'polar']:
         print("Output format not understood fallback to default: 'cartesian'")
-        return y.real, y.imag
+        output_format = 'cartesian'
+    if output_format == 'cartesian':
+        return ampc, amps
+    elif output_format == 'polar':
+        return np.abs(ampc +1j*amps), -np.angle(ampc + 1j*amps)
 
 
 def klt(inputs):

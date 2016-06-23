@@ -33,33 +33,12 @@ fs = 150 #Hz
 
 
 def ze_func(values, t, fs, ref_freq, title):
-    def func(t, a, b, c, f):
-        return a + b*np.cos(2*np.pi*f*t)+c*np.sin(2*np.pi*f*t)
 
-    a = sktools.maths.extract_sin_cos(values, fs, ref_freq, 'complex')
+    a, b = sktools.maths.extract_sin_cos(values, fs, ref_freq)
     plt.figure()
-    plt.subplot(211)
     plt.title(title)
-    plt.plot(pos, a.real)
-    plt.plot(pos, a.imag)
-    plt.legend(['sin', 'cos'])
-
-    N = values.shape[0]
-    offs = np.zeros(N)
-    ampc = np.zeros(N)
-    amps = np.zeros(N)
-    freq = np.zeros(N)
-    for idx in range(values.shape[0]):
-        y = values[idx,:]
-        res, _ \
-            = optimize.curve_fit(func, t, y,
-                                 [np.mean(y), a.real[idx], a.imag[idx], ref_freq])
-
-        [offs[idx], ampc[idx], amps[idx], freq[idx]] = res
-
-    plt.subplot(212)
-    plt.plot(pos, ampc)
-    plt.plot(pos, amps)
+    plt.plot(pos, a)
+    plt.plot(pos, b)
     plt.legend(['sin', 'cos'])
 
 if __name__ == '__main__':
@@ -68,7 +47,6 @@ if __name__ == '__main__':
         ref_freq = float(sys.argv[1])
 
     plt.close('all')
-    plt.ion()
     pml = PyML.PyML()
     pml.setao(pml.loadFromExtern('../external/bessyIIinit.py', 'ao'))
     pml.loadBPMOffsets('/opt/OPI/MapperApplications/conf/Orbit/SR/RefOrbit.Dat')
@@ -121,7 +99,7 @@ if __name__ == '__main__':
     tenHz = np.sin(2*np.pi*10*t + p0)
 
     ze_func(values[:,:Nmax], t[:Nmax], fs, ref_freq, 'No filter')
-
+    acos, asin = sktools.maths.extract_sin_cos(values, fs, ref_freq)
     b = signal.firwin(70, [6, 14], pass_zero=False, nyq=150/2)
     w,H = signal.freqz(b)
     plt.figure()
@@ -137,61 +115,61 @@ if __name__ == '__main__':
     plt.plot(t[100:Nmax],values[idx,100:Nmax]-np.mean(values[idx,100:Nmax]))
     plt.plot(t[100:Nmax],values_f[idx,100:Nmax]-np.mean(values_f[idx,100:Nmax]))
 
-#    # Optimize
-#    step_size = 0.1
-#    asin_opt, acos_opt, _ = sktools.maths.optimize_rotation(asin,
-#                                                            acos,
-#                                                            step_size)
-#    A = [asin, acos]
-#    klt = sktools.maths.klt(A)
-#
-#    plt.figure("optimisaton")
-#    plt.subplot(211)
-#    plt.title("Rotation")
-#    plt.plot(pos, asin_opt)
-#    plt.plot(pos, acos_opt)
-#    plt.legend(['sin', 'cos'])
-#    plt.subplot(212)
-#    plt.title("KLT")
-#    plt.plot(pos, klt[0])
-#    plt.plot(pos, klt[1])
-#
-#    # Correction fft
-#    S_inv = sktools.maths.inverse_with_svd(Smat, 32)
-#
-#    # Kick fft
-#    phase_kick, coeff = skcore.get_kick(np.array(asin_opt), phase, tune,
-#                                        True, True)
-#    kick_idx = np.argmin(abs(phase-phase_kick))
-#    corr = np.dot(S_inv, asin_opt)
-#
-#    # Kick fft
-#    phase_kick_cos, coeff = skcore.get_kick(np.array(acos_opt), phase, tune,
-#                                            True, True)
-#    kick_idx_cos = np.argmin(abs(phase-phase_kick_cos))
-#
-#    plt.figure('CMs, kick')
-#    plt.subplot(211)
-#    plt.plot(corr)
-#    plt.title('Correctors for f = {} Hz [sin]'.format(ref_freq))
-#
-#    plt.subplot(212)
-#    plt.plot(pos, asin_opt, '-g')
-#    plt.axvline(pos[kick_idx], -2, 2)
-#    plt.title('kick in sine component for f = {} Hz'.format(ref_freq))
-#
-#    print("sin = " + names[kick_idx])
-#    corr_cos = np.dot(S_inv, acos_opt)
-#
-#    plt.figure('CMs, kick cos')
-#    plt.subplot(211)
-#    plt.plot(corr_cos)
-#    plt.title('Correctors for f = {} Hz [cos]'.format(ref_freq))
-#
-#    plt.subplot(212)
-#    plt.plot(pos, acos_opt, '-g')
-#    plt.axvline(pos[kick_idx_cos], -2, 2)
-#    plt.title('kick in cosine component for f = {} Hz'.format(ref_freq))
-#
-#    print("cos = " + names[kick_idx_cos])
+    # Optimize
+    step_size = 0.1
+    acos_opt, asin_opt, _ = sktools.maths.optimize_rotation(acos,
+                                                            asin,
+                                                            step_size)
+    A = [acos, asin]
+    klt = sktools.maths.klt(A)
+
+    plt.figure("optimisaton")
+    plt.subplot(211)
+    plt.title("Rotation")
+    plt.plot(pos, acos_opt)
+    plt.plot(pos, asin_opt)
+    plt.legend(['cos', 'sin'])
+    plt.subplot(212)
+    plt.title("KLT")
+    plt.plot(pos, klt[0])
+    plt.plot(pos, klt[1])
+
+    # Correction fft
+    S_inv = sktools.maths.inverse_with_svd(Smat, 32)
+
+    # Kick fft
+    phase_kick, coeff = skcore.get_kick(np.array(asin_opt), phase, tune,
+                                        True, False)
+    kick_idx = np.argmin(abs(phase-phase_kick))
+    corr = np.dot(S_inv, asin_opt)
+
+    # Kick fft
+    phase_kick_cos, coeff = skcore.get_kick(np.array(acos_opt), phase, tune,
+                                            True, False)
+    kick_idx_cos = np.argmin(abs(phase-phase_kick_cos))
+
+    plt.figure('CMs, kick')
+    plt.subplot(211)
+    plt.plot(corr)
+    plt.title('Correctors for f = {} Hz [sin]'.format(ref_freq))
+
+    plt.subplot(212)
+    plt.plot(pos, asin_opt, '-g')
+    plt.axvline(pos[kick_idx], -2, 2)
+    plt.title('kick in sine component for f = {} Hz'.format(ref_freq))
+
+    print("sin = " + names[kick_idx])
+    corr_cos = np.dot(S_inv, acos_opt)
+
+    plt.figure('CMs, kick cos')
+    plt.subplot(211)
+    plt.plot(corr_cos)
+    plt.title('Correctors for f = {} Hz [cos]'.format(ref_freq))
+
+    plt.subplot(212)
+    plt.plot(pos, acos_opt, '-g')
+    plt.axvline(pos[kick_idx_cos], -2, 2)
+    plt.title('kick in cosine component for f = {} Hz'.format(ref_freq))
+
+    print("cos = " + names[kick_idx_cos])
     plt.show()
