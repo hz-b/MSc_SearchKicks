@@ -149,38 +149,36 @@ class OrbitData(object):
         plt.ylabel(ylabel)
         plt.grid()
 
-    def plot_fft(self, which=0, title="", opt=""):
-        if type(which) == int:
-            which = [which, which, which, which]
-        elif len(which) == 2:
-            if opt == "no_CM":
-                which.extend([0, 0])
-            elif opt == "no_BPM":
-                which = [0, 0].extend(which)
-            else:
-                which = [which[0], which[1], which[0], which[1]]
-        elif len(which) != 4:
-            raise ValueError("1st argument (which) must be a list with 4 elements")
+    def plot_fft(self, idx=0, which='BPM', axis="xy", title=None):
+        if type(idx) is int:
+            idx = [idx]
+        if len(idx) == 1 and len(axis) == 2:
+            idx *= 2
+        plt.figure()
 
-        if opt not in ["", "no_CM", "no_BPM"]:
-            raise ValueError("3rd argument (opt) can be 'no_CM', 'no_BPM' or "
-                             "empty, but not {}".format(opt))
-
-        if opt == "":
-            h_nb = 2
+        if which == "BPM":
+            x = self.BPMx
+            y = self.BPMy
+            plot_title = "BPM"
+            ylabel = 'Beam motion [in nm]'
         else:
-            h_nb = 1
-        if opt != "no_BPM":
-            plt.subplot(h_nb, 2, 1)
-            self._plot_single_fft(self.BPMx, which[0], "BPMx", 'Beam motion [in nm]')
-            plt.subplot(h_nb, 2, 2)
-            self._plot_single_fft(self.BPMy, which[1], "BPMy", 'Beam motion [in nm]')
-        if opt != "no_CM":
-            plt.subplot(h_nb, 2, 2*(h_nb-1) + 1)
-            self._plot_single_fft(self.CMx, which[2], "CMx", 'Correction [in uA]')
-            plt.subplot(h_nb, 2, 2*(h_nb-1) + 2)
-            self._plot_single_fft(self.CMy, which[3], "CMy", 'Correction [in uA]')
-            plt.tight_layout()
+            x = self.CMx
+            y = self.CMy
+            plot_title = "CM"
+            ylabel = 'Correction [in uA]'
+
+        i = idx[0]
+        if 'x' in axis:
+            if 'y' in axis:
+                plt.subplot(2, 1, 1)
+            self._plot_single_fft(x, i, plot_title+'x', ylabel)
+        if 'y' in axis:
+            if 'x' in axis:
+                i = idx[1]
+                plt.subplot(2, 1, 2)
+            self._plot_single_fft(y, i, plot_title+'y', ylabel)
+
+        plt.tight_layout()
 
     @property
     def datetime(self):
