@@ -255,7 +255,7 @@ def load_orbit_hdf5(filename):
     try:
         with h5py.File(filename, 'r') as f:
             if ('__version__' in f.attrs and
-                    f.attrs['__version__'].decode('utf8') == '1.0'):
+                    f.attrs['__version__'] == '1.0'):
                 try:
                     return OrbitData(
                         BPMx=f['data/BPMx'][:], BPMy=f['data/BPMy'][:],
@@ -273,8 +273,7 @@ def load_orbit_hdf5(filename):
             else:
                 raise NotImplementedError("The version {} is unknown to me, "
                                           "maybe you should teach it to me?"
-                                          .format(f.attrs['__version__']
-                                                   .decode('utf8')))
+                                          .format(f.attrs['__version__']))
     except Exception:
         raise
 
