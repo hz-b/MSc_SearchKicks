@@ -10,6 +10,14 @@ import scipy.io
 import scipy.signal as signal
 import scipy.optimize as optimize
 
+try:
+    import seaborn as sns
+    sns.set_style('ticks')
+    sns.grid()
+    seaborn = True
+except:
+    seaborn = False
+
 import PyML
 __my_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(__my_dir+"/..")
@@ -170,6 +178,7 @@ if __name__ == '__main__':
     plt.plot(pos, acos_opt, '-g')
     plt.axvline(pos[kick_idx_cos], -2, 2)
     plt.title('kick in cosine component for f = {} Hz'.format(ref_freq))
+    plt.tight_layout()
 
     print("cos = " + names[kick_idx_cos])
     plt.show()

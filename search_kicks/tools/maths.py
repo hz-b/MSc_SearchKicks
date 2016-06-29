@@ -223,7 +223,8 @@ def extract_sin_cos(x, fs, f, output_format='cartesian'):
     w0 = 2*np.pi*f0
     t = (np.arange(N)/fs).reshape((1, N)).repeat(M, axis=0)
     y = np.sum(x*np.exp(-1j*w0*t), axis=1)*2/N
-    print(f0)
+    print("[search_kicks.tools.math.extract_sin_cos] I use frequency {} Hz"
+          .format(f0))
     ampc = np.zeros(M) + y.real
     amps = np.zeros(M) + y.imag
 
@@ -233,7 +234,7 @@ def extract_sin_cos(x, fs, f, output_format='cartesian'):
 #
 #        [_, ampc[k], amps[k], f] = res
 #        print(f)
-    
+
     if output_format not in ['cartesian', 'polar']:
         print("Output format not understood fallback to default: 'cartesian'")
         output_format = 'cartesian'

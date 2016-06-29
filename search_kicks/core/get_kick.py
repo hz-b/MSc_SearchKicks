@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 from search_kicks.tools.maths import fit_sine
 from search_kicks.core import build_sine
 
-
 def get_kick(orbit, phase, tune, plot=False, error_curves=False):
     """ Find the kick in the orbit.
 
@@ -83,13 +82,10 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
         plt.subplot(211)
         plt.title('1- Sine Fit')
         idx_range = range(-len(rms_tab)//2, len(rms_tab)//2)
-        plt.plot(idx_range, rms_tab)
-        plt.plot(idx_range, cos_coef_tmp[:, 0]*100)
-        plt.plot(idx_range, -cos_coef_tmp[:, 1]*1000/(2*pi))
-        plt.legend(['RMS',
-                    r'Amplitude $\times 100$',
-                    r'Phase $\times (-1000 / 2\pi)$'
-                    ])
+        plt.plot(idx_range, rms_tab, label='RMS')
+        plt.plot(idx_range, cos_coef_tmp[:, 0]*100, label=r'Amplitude $\times 100$')
+        plt.plot(idx_range, -cos_coef_tmp[:, 1]*1000/(2*pi), label=r'Phase $\times (-1000 / 2\pi)$')
+        plt.legend(loc='best',fancybox=True, frameon=True)
         plt.ylabel('RMS')
         plt.xlabel('Distance from chosen one (in indexes), chosen one is {}'
                    .format(i_best))
@@ -124,13 +120,13 @@ def get_kick(orbit, phase, tune, plot=False, error_curves=False):
     if plot:
         plt.figure('skcore::get_kick -- Orbit plot [{}]'
                    .format(len(plt.get_fignums())))
-        plt.plot(phase/(2*pi), orbit, '+')
+        plt.plot(phase/(2*pi), orbit, '.',  ms=10, label='Real orbit')
         sine_signal, phase_th = build_sine(kick_phase,
                                            tune,
                                            cos_coefficients[i_best % bpm_nb]
                                            )
-        plt.plot(phase_th/(2*pi), sine_signal)
-        plt.axvline(kick_phase/(2*pi), -2, 2)
+        plt.plot(phase_th/(2*pi), sine_signal, label='Reconstructed sine')
+        plt.axvline(kick_phase/(2*pi), -2, 2, color='red', label='Kick position')
         plt.xlabel(r'phase / $2 \pi$')
-        plt.legend(['Real orbit', 'Reconstructed sine'])
+        plt.legend(fancybox=True, frameon=True)
     return kick_phase, cos_coefficients[i_best % bpm_nb]
