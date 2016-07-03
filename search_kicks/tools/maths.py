@@ -30,7 +30,7 @@ def optimize_rotation(cos_amp, sin_amp, step_size):
     maxval = 1e10
     angle_opt = 0
     for angle in np.arange(-180, 180, step_size):
-        sin_opt, cos_opt = rotate(cos_amp, sin_amp, angle, 'deg')
+        cos_opt, sin_opt = rotate(cos_amp, sin_amp, angle, 'deg')
         if max(abs(sin_opt)) < maxval:
             maxval = max(abs(sin_opt))
             angle_opt = angle
