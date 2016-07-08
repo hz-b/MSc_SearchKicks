@@ -20,20 +20,15 @@ except:
 
 __my_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, __my_dir+"/..")
-print(sys.path)
 import PyML
-print('PYML')
 import search_kicks.core as skcore
-print('core')
 import search_kicks.tools as sktools
-print('d')
 
 DEFAULT_DATA = '../search_kicks/default_data/'
 PHASE_FILE = DEFAULT_DATA + 'phases.mat'
 SMAT_FILE = DEFAULT_DATA + 'Smat-CM-Standard_HMI.mat'
 DATA_FILE = '../../_data/translated_FastBPMData_2015-10-26_06-57-56_vert10Hz.mat'
-#DATA_FILE = '../../_data/translated_FastBPMData_2015-10-26_06-54-42_horz10Hz.mat'
-#DATA_FILE = '../../_data/translated_FastBPMData_2015-10-26_06-39-01-ohne_10Hz.mat'
+
 #AXIS = 'x'
 AXIS = 'y'
 
@@ -43,18 +38,7 @@ tuneY = 6.74232980750181
 ref_freq = 10#9.979248046875
 fs = 150 #Hz
 
-
-def ze_func(values, t, fs, ref_freq, title):
-
-    a, b = sktools.maths.extract_sin_cos(values, fs, ref_freq)
-    plt.figure()
-    plt.title(title)
-    plt.plot(pos, a)
-    plt.plot(pos, b)
-    plt.legend(['sin', 'cos'])
-
 if __name__ == '__main__':
-    print('begin')
     if len(sys.argv) > 1:
         ref_freq = float(sys.argv[1])
 
@@ -65,11 +49,12 @@ if __name__ == '__main__':
 
     active_bpmsx = pml.getActiveIdx('BPMx')
     active_bpmsy = pml.getActiveIdx('BPMy')
-
+    active_cmsx = pml.getActiveIdx('HCM')
+    active_cmsy = pml.getActiveIdx('VCM')
     sx = pml.getfamilydata('BPMx', 'Pos')
     sy = pml.getfamilydata('BPMy', 'Pos')
-    cx = pml.getfamilydata('BPMx', 'Pos')
-    cy = pml.getfamilydata('BPMy', 'Pos')
+    cx = pml.getfamilydata('HCM', 'Pos')
+    cy = pml.getfamilydata('VCM', 'Pos')
 
     namesX = pml.getfamilydata('BPMx', 'CommonNames')
     namesY = pml.getfamilydata('BPMy', 'CommonNames')
@@ -91,6 +76,7 @@ if __name__ == '__main__':
     phaseY = phases_mat['PhaseZ'][:, 0]
 
     if AXIS == 'y':
+        poscor = cy[active_cmsy]
         pos = sy[active_bpmsy]
         Smat = Smat_yy
         phase = phaseY
@@ -98,6 +84,7 @@ if __name__ == '__main__':
         values = valuesY[active_bpmsy, :]
         names = namesY
     elif AXIS == 'x':
+        poscor = cx[active_cmsx]
         pos = sx[active_bpmsx]
         Smat = Smat_xx
         phase = phaseX
@@ -154,21 +141,9 @@ if __name__ == '__main__':
     kick_idx_cos = np.argmin(abs(phase-phase_kick_cos))
     corr_cos = np.dot(S_inv, acos_opt)
 
-    plt.figure('CMs, kick')
-    plt.subplot(211)
-    plt.plot(corr_sin)
-    plt.title('Correctors for f = {} Hz [sin]'.format(ref_freq))
-
-    plt.subplot(212)
-    plt.plot(pos, asin_opt, '-g')
-    plt.axvline(pos[kick_idx_sin], -2, 2)
-    plt.title('kick in sine component for f = {} Hz'.format(ref_freq))
-
-    print("sin = " + names[kick_idx_sin])
-
     plt.figure('CMs, kick cos')
     plt.subplot(211)
-    plt.plot(corr_cos)
+    plt.plot(poscor, corr_cos)
     plt.title('Correctors for f = {} Hz [cos]'.format(ref_freq))
 
     plt.subplot(212)
@@ -178,4 +153,18 @@ if __name__ == '__main__':
     plt.tight_layout()
 
     print("cos = " + names[kick_idx_cos])
+    
+    plt.figure('CMs, kick')
+    plt.subplot(211)
+    plt.plot(poscor, corr_sin)
+    plt.title('Correctors for f = {} Hz [sin]'.format(ref_freq))
+
+    plt.subplot(212)
+    plt.plot(pos, asin_opt, '-g')
+    plt.axvline(pos[kick_idx_sin], -2, 2)
+    plt.title('kick in sine component for f = {} Hz'.format(ref_freq))
+    plt.tight_layout()
+
+    print("sin = " + names[kick_idx_sin])
+
     plt.show()
