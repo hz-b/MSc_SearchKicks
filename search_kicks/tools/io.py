@@ -8,6 +8,9 @@ IO Module
 
 Load/Save time data from multiple supports and formats.
 
+For retro compatibility, for each version, do not edit but append a
+loading method (maybe we'll want to open a v1.0 in the future).
+
 Note
 ----
 It's better to use these function in a try/except structure as they raise
